@@ -1126,6 +1126,7 @@ key.command=Open Command
 key.screenshot=Take Screenshot
 key.pvp.hudEditor=Open HUD Editor
 key.pvp.hudManager=Open HUD Module Manager
+key.pvp.freelook=Third-Person Freelook
 key.pvp.toggleSprint=Toggle Sprint
 key.pvp.toggleSneak=Toggle Sneak
 key.pvp.quickReconnect=Quick Reconnect

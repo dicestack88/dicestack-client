@@ -340,7 +340,7 @@ public class GuiIngame extends Gui {
 	}
 
 	public void renderGameOverlayCrosshairs(int scaledResWidth, int scaledResHeight) {
-		if (this.showCrosshair()) {
+		if (this.showCrosshair() && !PvpClient.isFreelookActive()) {
 			if (this.mc.getPvpClient() != null
 					&& this.mc.getPvpClient().renderCustomCrosshair(scaledResWidth, scaledResHeight)) {
 				return;

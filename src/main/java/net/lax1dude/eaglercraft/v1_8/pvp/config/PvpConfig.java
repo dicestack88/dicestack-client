@@ -12,7 +12,7 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class PvpConfig {
 
-	public static final int CONFIG_VERSION = 7;
+	public static final int CONFIG_VERSION = 8;
 
 	public enum CrosshairStyle {
 		VANILLA,
@@ -43,6 +43,7 @@ public final class PvpConfig {
 	public boolean toggleSneakEnabled = false;
 	public boolean zoomEnabled = true;
 	public boolean zoomToggle = false;
+	public boolean freelookEnabled = true;
 	public float zoomStrength = 18.0f;
 	public CoordinateFormat coordinateFormat = CoordinateFormat.LABELLED;
 	public boolean clock24Hour = true;
@@ -238,6 +239,7 @@ public final class PvpConfig {
 		config.toggleSneakEnabled = root.optBoolean("toggleSneakEnabled", false);
 		config.zoomEnabled = root.optBoolean("zoomEnabled", true);
 		config.zoomToggle = root.optBoolean("zoomToggle", false);
+		config.freelookEnabled = root.optBoolean("freelookEnabled", true);
 		config.zoomStrength = clampFloat(root.optDouble("zoomStrength", 18.0d), 4.0f, 32.0f, 18.0f);
 		String coordinateFormat = root.optString("coordinateFormat", CoordinateFormat.LABELLED.name());
 		try {
@@ -437,6 +439,7 @@ public final class PvpConfig {
 		hidePortalOverlay = false;
 		fullbright = false;
 		disableEntityShadows = false;
+		freelookEnabled = true;
 		thirdPersonDistance = 4.0f;
 		zoomSmoothness = 60;
 		clearWater = false;
@@ -506,6 +509,7 @@ public final class PvpConfig {
 		root.put("toggleSneakEnabled", toggleSneakEnabled);
 		root.put("zoomEnabled", zoomEnabled);
 		root.put("zoomToggle", zoomToggle);
+		root.put("freelookEnabled", freelookEnabled);
 		root.put("zoomStrength", zoomStrength);
 		root.put("coordinateFormat", coordinateFormat.name());
 		root.put("clock24Hour", clock24Hour);

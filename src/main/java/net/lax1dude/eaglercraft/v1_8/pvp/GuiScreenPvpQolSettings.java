@@ -13,7 +13,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69 },
+			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69, 102 },
 			{ 30, 31, 32, 33, 34, 35, 38, 70, 71, 72, 93, 94, 95, 96, 100 },
 			{ 40, 41, 42, 43, 44, 45, 46, 47 },
 			{ 50, 51, 52, 53, 54, 55, 56, 57 },
@@ -138,6 +138,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 27: mc.gameSettings.viewBobbing = !mc.gameSettings.viewBobbing; mc.gameSettings.saveOptions(); break;
 		case 28: mc.gameSettings.smoothCamera = !mc.gameSettings.smoothCamera; mc.gameSettings.saveOptions(); break;
 		case 29: config.customFovEnabled = !config.customFovEnabled; break;
+		case 102: config.freelookEnabled = !config.freelookEnabled; break;
 		case 58: config.customFov = Math.max(30.0f, config.customFov - 5.0f); break;
 		case 59: config.customFov = Math.min(110.0f, config.customFov + 5.0f); break;
 		case 60:
@@ -317,6 +318,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 27: return "View Bobbing: " + on(mc.gameSettings.viewBobbing);
 		case 28: return "Smooth Camera: " + on(mc.gameSettings.smoothCamera);
 		case 29: return "Custom FOV: " + on(c.customFovEnabled);
+		case 102: return "Third-Person Freelook: " + on(c.freelookEnabled);
 		case 58: return "Custom FOV " + Math.round(c.customFov) + " -";
 		case 59: return "Custom FOV " + Math.round(c.customFov) + " +";
 		case 60: return "Chat Timestamps: " + on(c.chatTimestamps);

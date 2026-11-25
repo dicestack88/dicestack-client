@@ -205,6 +205,16 @@ public final class PvpClient {
 		return config != null && config.enabled ? config.thirdPersonDistance : vanillaDistance;
 	}
 
+	public static boolean isFreelookEnabled() {
+		PvpConfig config = instance == null ? null : instance.configStore.getConfig();
+		return config != null && config.enabled && config.freelookEnabled;
+	}
+
+	public static boolean isFreelookActive() {
+		return instance != null && instance.minecraft.entityRenderer != null
+				&& instance.minecraft.entityRenderer.isFreelookActive();
+	}
+
 	public static boolean isClearWaterEnabled() {
 		return instance != null && instance.configStore.getConfig().enabled
 				&& instance.configStore.getConfig().clearWater;

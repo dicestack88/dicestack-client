@@ -136,6 +136,13 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	 * Third person distance temp
 	 */
 	private float thirdPersonDistanceTemp = 4.0F;
+	private boolean freelookActive;
+	private Entity freelookEntity;
+	private WorldClient freelookWorld;
+	private float freelookYaw;
+	private float freelookPitch;
+	private float freelookPrevYaw;
+	private float freelookPrevPitch;
 	private float smoothCamYaw;
 	private float smoothCamPitch;
 	private float smoothCamFilterX;
@@ -389,6 +396,56 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		}
 	}
 
+	public boolean isFreelookActive() {
+		return this.freelookActive;
+	}
+
+	private void updateFreelookState(boolean held) {
+		EntityPlayer player = this.mc.thePlayer;
+		Entity viewEntity = this.mc.getRenderViewEntity();
+		boolean valid = held && PvpClient.isFreelookEnabled() && this.mc.theWorld != null && player != null
+				&& player.getHealth() > 0.0F && this.mc.currentScreen == null && this.mc.inGameHasFocus
+				&& this.mc.gameSettings.thirdPersonView != 0 && !this.mc.gameSettings.debugCamEnable
+				&& viewEntity == player;
+		if (!valid) {
+			this.freelookActive = false;
+			this.freelookEntity = null;
+			this.freelookWorld = null;
+			return;
+		}
+
+		if (!this.freelookActive || this.freelookEntity != player || this.freelookWorld != this.mc.theWorld) {
+			this.freelookActive = true;
+			this.freelookEntity = player;
+			this.freelookWorld = this.mc.theWorld;
+			this.freelookYaw = player.rotationYaw;
+			this.freelookPitch = player.rotationPitch;
+			this.freelookPrevYaw = this.freelookYaw;
+			this.freelookPrevPitch = this.freelookPitch;
+		} else {
+			this.freelookPrevYaw = this.freelookYaw;
+			this.freelookPrevPitch = this.freelookPitch;
+		}
+	}
+
+	private void applyMouseLook(float yaw, float pitch) {
+		if (this.freelookActive) {
+			this.freelookYaw += yaw * 0.15F;
+			this.freelookPitch = MathHelper.clamp_float(this.freelookPitch - pitch * 0.15F, -90.0F, 90.0F);
+		} else {
+			this.mc.thePlayer.setAngles(yaw, pitch);
+		}
+	}
+
+	private float getFreelookYaw(float partialTicks) {
+		return this.freelookPrevYaw
+				+ MathHelper.wrapAngleTo180_float(this.freelookYaw - this.freelookPrevYaw) * partialTicks;
+	}
+
+	private float getFreelookPitch(float partialTicks) {
+		return this.freelookPrevPitch + (this.freelookPitch - this.freelookPrevPitch) * partialTicks;
+	}
+
 	/**+
 	 * Update FOV modifier hand
 	 */
@@ -523,8 +580,10 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			if (this.mc.gameSettings.debugCamEnable) {
 				GlStateManager.translate(0.0F, 0.0F, (float) (-d3));
 			} else {
-				float f1 = entity.rotationYaw;
-				float f2 = entity.rotationPitch;
+				float f1 = this.freelookActive && entity == this.freelookEntity
+						? this.getFreelookYaw(partialTicks) : entity.rotationYaw;
+				float f2 = this.freelookActive && entity == this.freelookEntity
+						? this.getFreelookPitch(partialTicks) : entity.rotationPitch;
 				if (this.mc.gameSettings.thirdPersonView == 2) {
 					f2 += 180.0F;
 				}
@@ -889,6 +948,8 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			initializedOF = true;
 		}
 		boolean flag = Display.isActive() || mc.gameSettings.touchscreen;
+		this.updateFreelookState(flag && this.mc.inGameHasFocus
+				&& this.mc.gameSettings.keyBindPvpFreelook.isKeyDown());
 		if (!flag && this.mc.gameSettings.pauseOnLostFocus
 				&& (!this.mc.gameSettings.touchscreen || !PointerInputAbstraction.getVCursorButtonDown(1))) {
 			if (Minecraft.getSystemTime() - this.prevFrameTime > 500L) {
@@ -919,11 +980,11 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 				this.smoothCamPartialTicks = parFloat1;
 				f2 = this.smoothCamFilterX * f4;
 				f3 = this.smoothCamFilterY * f4;
-				this.mc.thePlayer.setAngles(f2, f3 * (float) b0);
+				this.applyMouseLook(f2, f3 * (float) b0);
 			} else {
 				this.smoothCamYaw = 0.0F;
 				this.smoothCamPitch = 0.0F;
-				this.mc.thePlayer.setAngles(f2, f3 * (float) b0);
+				this.applyMouseLook(f2, f3 * (float) b0);
 			}
 		}
 
