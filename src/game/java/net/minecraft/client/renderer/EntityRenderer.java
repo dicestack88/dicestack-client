@@ -894,7 +894,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		if (this.mc.inGameHasFocus && flag) {
 			this.mc.mouseHelper.mouseXYChange();
 			float f = this.mc.gameSettings.mouseSensitivity * 0.6F + 0.2F;
-			if (this.mc.gameSettings.keyBindZoomCamera.isKeyDown()) {
+			if (this.mc.isZoomKey) {
 				f *= 0.7f;
 			}
 			float f1 = f * f * f * 8.0F;

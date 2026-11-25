@@ -10,7 +10,13 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class PvpConfig {
 
-	public static final int CONFIG_VERSION = 3;
+	public static final int CONFIG_VERSION = 4;
+
+	public enum CoordinateFormat {
+		LABELLED,
+		COMMAS,
+		SLASHES
+	}
 
 	public boolean enabled = true;
 	public boolean hudEnabled = true;
@@ -21,6 +27,16 @@ public final class PvpConfig {
 	public boolean automaticLayout = false;
 	public int layoutSpacing = 4;
 	public int layoutSafeMargin = 4;
+	public boolean toggleSprintEnabled = false;
+	public boolean toggleSneakEnabled = false;
+	public boolean zoomEnabled = true;
+	public boolean zoomToggle = false;
+	public float zoomStrength = 18.0f;
+	public CoordinateFormat coordinateFormat = CoordinateFormat.LABELLED;
+	public boolean clock24Hour = true;
+	public boolean clockShowSeconds = false;
+	public String lastServerName = "";
+	public String lastServerAddress = "";
 
 	public PvpConfig() {
 		elements.put("fps", new HudElementConfig(true, HudElementConfig.Anchor.TOP_LEFT, 5, 5, 1.0f));
@@ -112,7 +128,6 @@ public final class PvpConfig {
 			config.migrateLegacyRoot(root);
 			return config;
 		}
-
 		config.enabled = root.optBoolean("enabled", true);
 		config.hudEnabled = root.optBoolean("hudEnabled", true);
 		JSONObject elements = root.optJSONObject("elements");
@@ -133,7 +148,32 @@ public final class PvpConfig {
 		config.automaticLayout = root.optBoolean("automaticLayout", false);
 		config.layoutSpacing = Math.max(0, Math.min(32, root.optInt("layoutSpacing", 4)));
 		config.layoutSafeMargin = Math.max(0, Math.min(32, root.optInt("layoutSafeMargin", 4)));
+		config.toggleSprintEnabled = root.optBoolean("toggleSprintEnabled", false);
+		config.toggleSneakEnabled = root.optBoolean("toggleSneakEnabled", false);
+		config.zoomEnabled = root.optBoolean("zoomEnabled", true);
+		config.zoomToggle = root.optBoolean("zoomToggle", false);
+		config.zoomStrength = clampFloat(root.optDouble("zoomStrength", 18.0d), 4.0f, 32.0f, 18.0f);
+		String coordinateFormat = root.optString("coordinateFormat", CoordinateFormat.LABELLED.name());
+		try {
+			config.coordinateFormat = CoordinateFormat.valueOf(coordinateFormat);
+		}catch(RuntimeException ex) {
+			config.coordinateFormat = CoordinateFormat.LABELLED;
+		}
+		config.clock24Hour = root.optBoolean("clock24Hour", true);
+		config.clockShowSeconds = root.optBoolean("clockShowSeconds", false);
+		config.lastServerName = root.optString("lastServerName", "");
+		config.lastServerAddress = root.optString("lastServerAddress", "");
 		return config;
+	}
+
+	public static String formatCoordinates(CoordinateFormat format, int x, int y, int z) {
+		if(format == CoordinateFormat.COMMAS) {
+			return x + ", " + y + ", " + z;
+		}else if(format == CoordinateFormat.SLASHES) {
+			return x + " / " + y + " / " + z;
+		}else {
+			return "X: " + x + ", Y: " + y + ", Z: " + z;
+		}
 	}
 
 	private void migrateLegacyRoot(JSONObject root) {
@@ -159,6 +199,16 @@ public final class PvpConfig {
 		root.put("automaticLayout", automaticLayout);
 		root.put("layoutSpacing", layoutSpacing);
 		root.put("layoutSafeMargin", layoutSafeMargin);
+		root.put("toggleSprintEnabled", toggleSprintEnabled);
+		root.put("toggleSneakEnabled", toggleSneakEnabled);
+		root.put("zoomEnabled", zoomEnabled);
+		root.put("zoomToggle", zoomToggle);
+		root.put("zoomStrength", zoomStrength);
+		root.put("coordinateFormat", coordinateFormat.name());
+		root.put("clock24Hour", clock24Hour);
+		root.put("clockShowSeconds", clockShowSeconds);
+		root.put("lastServerName", lastServerName);
+		root.put("lastServerAddress", lastServerAddress);
 		JSONObject elementsObject = new JSONObject();
 		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
 			elementsObject.put(entry.getKey(), entry.getValue().toJson());
@@ -169,6 +219,13 @@ public final class PvpConfig {
 
 	private static void copyAppearance(HudAppearanceConfig destination, HudAppearanceConfig source) {
 		destination.copyFrom(source);
+	}
+
+	private static float clampFloat(double value, float min, float max, float fallback) {
+		if(Double.isNaN(value) || Double.isInfinite(value)) {
+			return fallback;
+		}
+		return Math.max(min, Math.min(max, (float) value));
 	}
 
 }

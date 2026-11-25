@@ -12,6 +12,7 @@ import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.profile.EaglerProfile;
 import net.lax1dude.eaglercraft.v1_8.socket.AddressResolver;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.lax1dude.eaglercraft.v1_8.socket.RateLimitTracker;
 import net.lax1dude.eaglercraft.v1_8.socket.protocol.handshake.HandshakerHandler;
 import net.minecraft.client.Minecraft;
@@ -103,6 +104,10 @@ public class GuiConnecting extends GuiScreen {
 		this.mc = mcIn;
 		this.previousGuiScreen = parGuiScreen;
 		mcIn.loadWorld((WorldClient) null);
+		PvpClient pvpClient = PvpClient.getInstance();
+		if(pvpClient != null) {
+			pvpClient.recordServerAddress(hostName, hostName);
+		}
 		this.connect(hostName, password, allowPlaintext,
 				allowCookies && EagRuntime.getConfiguration().isEnableServerCookies());
 	}

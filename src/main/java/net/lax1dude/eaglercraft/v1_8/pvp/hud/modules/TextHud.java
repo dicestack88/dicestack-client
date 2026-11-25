@@ -40,6 +40,8 @@ public final class TextHud implements HudElement {
 	private int cachedBiomeZ = Integer.MIN_VALUE;
 	private String cachedText = "";
 	private int cachedWidth;
+	private boolean cachedClock24Hour;
+	private boolean cachedClockSeconds;
 
 	public TextHud(Minecraft minecraft, String id, Type type) {
 		this.minecraft = minecraft;
@@ -126,13 +128,30 @@ public final class TextHud implements HudElement {
 				setText("World Time: Unavailable");
 				break;
 			}
-			long tick = minecraft.theWorld.getWorldTime() / 20L;
-			if(tick != cachedValue) {
+			long worldTime = minecraft.theWorld.getWorldTime();
+			boolean showSeconds = context.config.clockShowSeconds;
+			long tick = showSeconds ? worldTime : worldTime / 20L;
+			if(tick != cachedValue || context.config.clock24Hour != cachedClock24Hour
+					|| context.config.clockShowSeconds != cachedClockSeconds) {
 				cachedValue = tick;
-				long daytime = (minecraft.theWorld.getWorldTime() + 6000L) % 24000L;
-				int hours = (int) (daytime / 1000L);
+				cachedClock24Hour = context.config.clock24Hour;
+				cachedClockSeconds = context.config.clockShowSeconds;
+				long daytime = (worldTime + 6000L) % 24000L;
+				if(daytime < 0L) {
+					daytime += 24000L;
+				}
+				int hours24 = (int) (daytime / 1000L);
 				int minutes = (int) (daytime % 1000L * 60L / 1000L);
-				setText("World Time: " + twoDigits(hours) + ":" + twoDigits(minutes));
+				int seconds = (int) (daytime % 1000L * 3600L / 1000L % 60L);
+				int displayHours = context.config.clock24Hour ? hours24 : hours24 % 12 == 0 ? 12 : hours24 % 12;
+				String clock = twoDigits(displayHours) + ":" + twoDigits(minutes);
+				if(showSeconds) {
+					clock += ":" + twoDigits(seconds);
+				}
+				if(!context.config.clock24Hour) {
+					clock += hours24 < 12 ? " AM" : " PM";
+				}
+				setText("World Time: " + clock);
 			}
 			break;
 		case SESSION_TIME:

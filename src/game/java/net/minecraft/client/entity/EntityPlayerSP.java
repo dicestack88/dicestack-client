@@ -4,6 +4,7 @@ import net.lax1dude.eaglercraft.v1_8.EaglercraftVersion;
 import net.lax1dude.eaglercraft.v1_8.sp.lan.LANClientNetworkManager;
 import net.lax1dude.eaglercraft.v1_8.sp.socket.ClientIntegratedServerNetworkManager;
 import net.minecraft.client.Minecraft;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.minecraft.client.audio.MovingSoundMinecartRiding;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiCommandBlock;
@@ -684,7 +685,8 @@ public class EntityPlayerSP extends AbstractClientPlayer {
 		}
 
 		if (!this.isSprinting() && this.movementInput.moveForward >= f && flag3 && !this.isUsingItem()
-				&& !this.isPotionActive(Potion.blindness) && this.mc.gameSettings.keyBindSprint.isKeyDown()) {
+				&& !this.isPotionActive(Potion.blindness)
+				&& (this.mc.gameSettings.keyBindSprint.isKeyDown() || PvpClient.isSprintToggled())) {
 			this.setSprinting(true);
 		}
 
