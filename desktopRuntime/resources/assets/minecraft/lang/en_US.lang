@@ -1125,6 +1125,7 @@ key.mouseButton=Button %1$s
 key.command=Open Command
 key.screenshot=Take Screenshot
 key.pvp.hudEditor=Open HUD Editor
+key.pvp.hudManager=Open HUD Module Manager
 key.togglePerspective=Toggle Perspective
 key.smoothCamera=Toggle Cinematic Camera
 key.fullscreen=Toggle Fullscreen
