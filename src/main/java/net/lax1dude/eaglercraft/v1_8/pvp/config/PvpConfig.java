@@ -2,6 +2,8 @@ package net.lax1dude.eaglercraft.v1_8.pvp.config;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONObject;
 
@@ -10,7 +12,7 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class PvpConfig {
 
-	public static final int CONFIG_VERSION = 5;
+	public static final int CONFIG_VERSION = 6;
 
 	public enum CrosshairStyle {
 		VANILLA,
@@ -29,6 +31,8 @@ public final class PvpConfig {
 	public boolean enabled = true;
 	public boolean hudEnabled = true;
 	public final Map<String, HudElementConfig> elements = new LinkedHashMap<>();
+	private final Map<String, JSONObject> hudProfiles = new LinkedHashMap<>();
+	public String activeHudProfile = "";
 	private int loadedVersion;
 	private boolean needsMigration;
 	public final HudAppearanceConfig appearance = HudAppearanceConfig.defaults();
@@ -69,6 +73,11 @@ public final class PvpConfig {
 	public boolean crosshairDynamicColor;
 	public boolean crosshairHideInMenus = true;
 	public boolean crosshairHideInThirdPerson = true;
+	public boolean customFovEnabled;
+	public float customFov = 70.0f;
+	public boolean chatTimestamps;
+	public boolean chatTimestamp24Hour = true;
+	public boolean chatHighlightMentions;
 
 	public PvpConfig() {
 		elements.put("fps", new HudElementConfig(true, HudElementConfig.Anchor.TOP_LEFT, 5, 5, 1.0f));
@@ -98,6 +107,8 @@ public final class PvpConfig {
 		elements.put("day_counter", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 188, 1.0f));
 		elements.put("light_level", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 203, 1.0f));
 		elements.put("low_health", new HudElementConfig(false, HudElementConfig.Anchor.TOP_CENTER, 0, 20, 1.0f));
+		elements.put("food_info", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 218, 1.0f));
+		elements.put("item_count", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_RIGHT, 5, 20, 1.0f));
 	}
 
 	public HudElementConfig getElement(String id) {
@@ -123,6 +134,7 @@ public final class PvpConfig {
 
 	private void copyElement(HudElementConfig destination, HudElementConfig source) {
 		destination.enabled = source.enabled;
+		destination.favorite = source.favorite;
 		destination.anchor = source.anchor;
 		destination.offsetX = source.offsetX;
 		destination.offsetY = source.offsetY;
@@ -234,7 +246,89 @@ public final class PvpConfig {
 		config.crosshairDynamicColor = root.optBoolean("crosshairDynamicColor", false);
 		config.crosshairHideInMenus = root.optBoolean("crosshairHideInMenus", true);
 		config.crosshairHideInThirdPerson = root.optBoolean("crosshairHideInThirdPerson", true);
+		config.customFovEnabled = root.optBoolean("customFovEnabled", false);
+		config.customFov = clampFloat(root.optDouble("customFov", 70.0d), 30.0f, 110.0f, 70.0f);
+		config.chatTimestamps = root.optBoolean("chatTimestamps", false);
+		config.chatTimestamp24Hour = root.optBoolean("chatTimestamp24Hour", true);
+		config.chatHighlightMentions = root.optBoolean("chatHighlightMentions", false);
+		config.activeHudProfile = root.optString("activeHudProfile", "");
+		JSONObject profiles = root.optJSONObject("hudProfiles");
+		if(profiles != null) {
+			for(java.util.Iterator<String> it = profiles.keys(); it.hasNext();) {
+				String name = it.next();
+				JSONObject profile = profiles.optJSONObject(name);
+				if(isValidProfileName(name) && profile != null && profile.optJSONObject("elements") != null
+						&& profile.optJSONObject("appearance") != null && config.hudProfiles.size() < 8) {
+					config.hudProfiles.put(name, new JSONObject(profile.toString()));
+				}
+			}
+		}
+		if(!config.hudProfiles.containsKey(config.activeHudProfile)) {
+			config.activeHudProfile = "";
+		}
 		return config;
+	}
+
+	public boolean saveHudProfile(String name) {
+		name = normalizeProfileName(name);
+		if(name == null || !hudProfiles.containsKey(name) && hudProfiles.size() >= 8) {
+			return false;
+		}
+		JSONObject profile = new JSONObject();
+		profile.put("appearance", appearance.toJson());
+		profile.put("automaticLayout", automaticLayout);
+		profile.put("layoutSpacing", layoutSpacing);
+		profile.put("layoutSafeMargin", layoutSafeMargin);
+		JSONObject profileElements = new JSONObject();
+		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
+			profileElements.put(entry.getKey(), entry.getValue().toJson());
+		}
+		profile.put("elements", profileElements);
+		hudProfiles.put(name, profile);
+		activeHudProfile = name;
+		return true;
+	}
+
+	public boolean applyHudProfile(String name) {
+		JSONObject profile = hudProfiles.get(name);
+		if(profile == null) {
+			return false;
+		}
+		JSONObject profileElements = profile.optJSONObject("elements");
+		JSONObject profileAppearance = profile.optJSONObject("appearance");
+		if(profileElements == null || profileAppearance == null) {
+			return false;
+		}
+		HudAppearanceConfig parsedAppearance = HudAppearanceConfig.fromJson(profileAppearance,
+				HudAppearanceConfig.defaults());
+		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
+			JSONObject element = profileElements.optJSONObject(entry.getKey());
+			if(element != null) {
+				HudElementConfig parsed = HudElementConfig.fromJson(element, entry.getValue());
+				parsed.favorite = entry.getValue().favorite;
+				elements.put(entry.getKey(), parsed);
+			}
+		}
+		appearance.copyFrom(parsedAppearance);
+		automaticLayout = profile.optBoolean("automaticLayout", automaticLayout);
+		layoutSpacing = Math.max(0, Math.min(32, profile.optInt("layoutSpacing", layoutSpacing)));
+		layoutSafeMargin = Math.max(0, Math.min(32, profile.optInt("layoutSafeMargin", layoutSafeMargin)));
+		activeHudProfile = name;
+		return true;
+	}
+
+	public boolean removeHudProfile(String name) {
+		if(hudProfiles.remove(name) == null) {
+			return false;
+		}
+		if(name.equals(activeHudProfile)) {
+			activeHudProfile = "";
+		}
+		return true;
+	}
+
+	public List<String> getHudProfileNames() {
+		return new ArrayList<>(hudProfiles.keySet());
 	}
 
 	public static String formatCoordinates(CoordinateFormat format, int x, int y, int z) {
@@ -304,6 +398,17 @@ public final class PvpConfig {
 		root.put("crosshairDynamicColor", crosshairDynamicColor);
 		root.put("crosshairHideInMenus", crosshairHideInMenus);
 		root.put("crosshairHideInThirdPerson", crosshairHideInThirdPerson);
+		root.put("customFovEnabled", customFovEnabled);
+		root.put("customFov", customFov);
+		root.put("chatTimestamps", chatTimestamps);
+		root.put("chatTimestamp24Hour", chatTimestamp24Hour);
+		root.put("chatHighlightMentions", chatHighlightMentions);
+		root.put("activeHudProfile", activeHudProfile);
+		JSONObject profiles = new JSONObject();
+		for(Map.Entry<String, JSONObject> entry : hudProfiles.entrySet()) {
+			profiles.put(entry.getKey(), new JSONObject(entry.getValue().toString()));
+		}
+		root.put("hudProfiles", profiles);
 		JSONObject elementsObject = new JSONObject();
 		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
 			elementsObject.put(entry.getKey(), entry.getValue().toJson());
@@ -321,6 +426,18 @@ public final class PvpConfig {
 			return fallback;
 		}
 		return Math.max(min, Math.min(max, (float) value));
+	}
+
+	private static boolean isValidProfileName(String name) {
+		return name != null && name.trim().length() > 0 && name.length() <= 32;
+	}
+
+	private static String normalizeProfileName(String name) {
+		if(name == null) {
+			return null;
+		}
+		name = name.trim();
+		return isValidProfileName(name) ? name : null;
 	}
 
 }

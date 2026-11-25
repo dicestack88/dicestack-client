@@ -26,6 +26,9 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private static final int BUTTON_CATEGORY_BASE = 20;
 	private static final int BUTTON_APPEARANCE_OVERRIDE = 9;
 	private static final int BUTTON_THEME_PRESET = 10;
+	private static final int BUTTON_FAVORITE = 11;
+	private static final int BUTTON_FAVORITES_ONLY = 12;
+	private static final int BUTTON_PROFILES = 13;
 
 	private final PvpClient pvpClient;
 	private final List<HudModuleInfo> filteredModules = new ArrayList<>();
@@ -44,6 +47,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private int visibleRows;
 	private int page;
 	private String previousSearch = "";
+	private boolean favoritesOnly;
 
 	public GuiScreenPvpHudModuleManager(PvpClient pvpClient) {
 		this.pvpClient = pvpClient;
@@ -51,6 +55,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
 	@Override
 	public void initGui() {
+		buttonList.clear();
 		panelWidth = Math.min(620, width - 12);
 		panelHeight = Math.min(430, height - 12);
 		panelX = (width - panelWidth) / 2;
@@ -60,10 +65,9 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		listWidth = panelWidth - 250;
 		visibleRows = Math.max(1, Math.min(PAGE_SIZE, (panelHeight - 188) / 28));
 
-		searchField = new GuiTextField(100, fontRendererObj, panelX + 12, panelY + 69, listWidth, 18);
+		searchField = new GuiTextField(100, fontRendererObj, panelX + 12, panelY + 69, listWidth - 80, 18);
 		searchField.setMaxStringLength(32);
 		searchField.setText(previousSearch);
-
 		int tabX = panelX + 12;
 		int tabWidth = (panelWidth - 24) / HudModuleInfo.Category.values().length;
 		HudModuleInfo.Category[] categories = HudModuleInfo.Category.values();
@@ -72,22 +76,27 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 					categories[i].getDisplayName()));
 		}
 		updateCategoryButtons();
+		buttonList.add(new GuiButton(BUTTON_FAVORITES_ONLY, panelX + listWidth - 60, panelY + 68, 72, 20,
+				favoritesOnly ? "Favourites" : "All"));
 
 		int sideX = panelX + listWidth + 26;
 		buttonList.add(new GuiButton(BUTTON_SCALE_DOWN, sideX, listY + 116, 40, 20, "-"));
 		buttonList.add(new GuiButton(BUTTON_SCALE_UP, sideX + 46, listY + 116, 40, 20, "+"));
 		buttonList.add(new GuiButton(BUTTON_APPEARANCE_OVERRIDE, sideX, listY + 176, 86, 20, "Appearance"));
 		buttonList.add(new GuiButton(BUTTON_THEME_PRESET, sideX, listY + 200, 86, 20, "Preset"));
+		buttonList.add(new GuiButton(BUTTON_FAVORITE, sideX, listY + 224, 86, 20, "Favourite"));
 		buttonList.add(previousButton = new GuiButton(BUTTON_PREVIOUS, listX, panelY + panelHeight - 88, 52, 20, "<"));
 		buttonList.add(nextButton = new GuiButton(BUTTON_NEXT, listX + 58, panelY + panelHeight - 88, 52, 20, ">"));
 		int footerY = panelY + panelHeight - 30;
-		int footerWidth = (panelWidth - 36) / 4;
+		int footerWidth = (panelWidth - 48) / 5;
 		buttonList.add(new GuiButton(BUTTON_EDIT_LAYOUT, panelX + 12, footerY, footerWidth, 20, "Edit HUD Layout"));
 		buttonList.add(new GuiButton(BUTTON_DISABLE_ALL, panelX + 16 + footerWidth, footerY, footerWidth, 20,
 				"Disable All"));
 		buttonList.add(new GuiButton(BUTTON_RESET_DEFAULTS, panelX + 20 + footerWidth * 2, footerY, footerWidth, 20,
 				"Reset Defaults"));
-		buttonList.add(new GuiButton(BUTTON_DONE, panelX + 24 + footerWidth * 3, footerY, footerWidth, 20, "Done"));
+		buttonList.add(new GuiButton(BUTTON_PROFILES, panelX + 24 + footerWidth * 3, footerY, footerWidth, 20,
+				"Profiles"));
+		buttonList.add(new GuiButton(BUTTON_DONE, panelX + 28 + footerWidth * 4, footerY, footerWidth, 20, "Done"));
 		refreshModules();
 	}
 
@@ -118,6 +127,9 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 			fontRendererObj.drawStringWithShadow(module.name, listX + 9, rowY + 4, 0xFFE9EFF7);
 			fontRendererObj.drawStringWithShadow(config.enabled ? "ON" : "OFF",
 					listX + listWidth - 42, rowY + 4, config.enabled ? 0xFF55DD88 : 0xFF9BA8B8);
+			if(config.favorite) {
+				fontRendererObj.drawStringWithShadow("*", listX + listWidth - 56, rowY + 4, 0xFFFFD166);
+			}
 		}
 
 		int sideX = panelX + listWidth + 26;
@@ -133,7 +145,9 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 					listY + 48, 0xFF9BA8B8);
 			fontRendererObj.drawStringWithShadow("State: " + (config.enabled ? "Enabled" : "Disabled"), sideX,
 					listY + 64, config.enabled ? 0xFF55DD88 : 0xFF9BA8B8);
-			fontRendererObj.drawStringWithShadow("Scale: " + config.scale + "x", sideX, listY + 96, 0xFFE9EFF7);
+			fontRendererObj.drawStringWithShadow("Favourite: " + (config.favorite ? "Yes" : "No"), sideX,
+					listY + 80, config.favorite ? 0xFFFFD166 : 0xFF9BA8B8);
+			fontRendererObj.drawStringWithShadow("Scale: " + config.scale + "x", sideX, listY + 108, 0xFFE9EFF7);
 			fontRendererObj.drawStringWithShadow("Position and snapping are", sideX, listY + 148, 0xFF9BA8B8);
 			fontRendererObj.drawStringWithShadow("available in HUD Layout.", sideX, listY + 160, 0xFF9BA8B8);
 		}
@@ -190,6 +204,19 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		case BUTTON_DONE:
 			closeManager();
 			break;
+		case BUTTON_PROFILES:
+			mc.displayGuiScreen(new GuiScreenPvpHudProfiles(pvpClient, this));
+			break;
+		case BUTTON_FAVORITE:
+			if(selectedModule != null) {
+				HudElementConfig selected = pvpClient.getHudManager().getElementConfig(selectedModule.element);
+				selected.favorite = !selected.favorite;
+				pvpClient.getConfigStore().markDirty();
+				if(favoritesOnly && !selected.favorite) {
+					refreshModules();
+				}
+			}
+			break;
 		case BUTTON_APPEARANCE_OVERRIDE:
 			if(selectedModule != null) {
 				HudElementConfig selected = pvpClient.getHudManager().getElementConfig(selectedModule.element);
@@ -208,6 +235,11 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 				pvpClient.getConfigStore().markDirty();
 			}
 			break;
+		case BUTTON_FAVORITES_ONLY:
+			favoritesOnly = !favoritesOnly;
+			page = 0;
+			refreshModules();
+			break;
 		}
 		updatePagingButtons();
 	}
@@ -221,6 +253,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 				HudModuleInfo module = filteredModules.get(index);
 				selectedModule = module;
 				searchField.setFocused(false);
+				updatePagingButtons();
 				if(mouseX >= listX + listWidth - 50) {
 					HudElementConfig config = pvpClient.getHudManager().getElementConfig(module.element);
 					config.enabled = !config.enabled;
@@ -266,7 +299,9 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		HudManager manager = pvpClient.getHudManager();
 		for(int i = 0; i < manager.getElementCount(); ++i) {
 			HudModuleInfo module = manager.getModuleInfo(i);
-			if(module.category == category && module.name.toLowerCase(Locale.ROOT).contains(query)) {
+			boolean favorite = manager.getElementConfig(module.element).favorite;
+			if(module.category == category && module.name.toLowerCase(Locale.ROOT).contains(query)
+					&& (!favoritesOnly || favorite)) {
 				filteredModules.add(module);
 			}
 		}
@@ -284,6 +319,17 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		if(previousButton != null) {
 			previousButton.enabled = page > 0;
 			nextButton.enabled = page + 1 < pageCount;
+		}
+		for(int i = 0; i < buttonList.size(); ++i) {
+			GuiButton button = (GuiButton) buttonList.get(i);
+			if(button.id == BUTTON_FAVORITES_ONLY) {
+				button.displayString = favoritesOnly ? "Favourites" : "All";
+			}else if(button.id == BUTTON_FAVORITE) {
+				HudElementConfig config = selectedModule == null ? null
+						: pvpClient.getHudManager().getElementConfig(selectedModule.element);
+				button.displayString = config != null && config.favorite ? "Unfavourite" : "Favourite";
+				button.enabled = selectedModule != null;
+			}
 		}
 	}
 

@@ -423,6 +423,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			float f = 70.0F;
 			if (parFlag) {
 				f = this.mc.isZoomKey ? this.mc.adjustedZoomValue : this.mc.gameSettings.fovSetting;
+				f = PvpClient.getConfiguredFov(f);
 				f = f * (this.fovModifierHandPrev + (this.fovModifierHand - this.fovModifierHandPrev) * partialTicks);
 			}
 

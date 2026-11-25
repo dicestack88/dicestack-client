@@ -8,6 +8,8 @@ import com.google.common.collect.Lists;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
@@ -55,6 +57,12 @@ public class GuiNewChat extends Gui {
 
 	public void drawChat(int parInt1) {
 		if (this.mc.gameSettings.chatVisibility != EntityPlayer.EnumChatVisibility.HIDDEN) {
+			PvpConfig pvpConfig = PvpClient.getInstance() == null ? null
+					: PvpClient.getInstance().getConfigStore().getConfig();
+			boolean showTimestamps = pvpConfig != null && pvpConfig.enabled && pvpConfig.chatTimestamps;
+			int timestampWidth = showTimestamps
+					? this.mc.fontRendererObj.getStringWidth(pvpConfig.chatTimestamp24Hour ? "00:00 " : "12:00 AM ")
+					: 0;
 			int i = this.getLineCount();
 			boolean flag = false;
 			int j = 0;
@@ -91,11 +99,25 @@ public class GuiNewChat extends Gui {
 							if (l1 > 3) {
 								byte b0 = 0;
 								int i2 = -i1 * 9;
-								drawRect(b0, i2 - 9, b0 + l + 4, i2, l1 / 2 << 24);
-								String s = chatline.getChatComponent().getFormattedText();
+								int backgroundAlpha = l1 / 2;
+								drawRect(b0, i2 - 9, b0 + l + 4 + timestampWidth, i2, backgroundAlpha << 24);
+								String formattedText = chatline.getChatComponent().getFormattedText();
+								String plainText = chatline.getChatComponent().getUnformattedText();
+								boolean highlightMention = pvpConfig != null && pvpConfig.enabled
+										&& pvpConfig.chatHighlightMentions && this.mc.thePlayer != null
+										&& !this.mc.thePlayer.getName().isEmpty()
+										&& plainText.toLowerCase(java.util.Locale.ROOT)
+												.contains(this.mc.thePlayer.getName().toLowerCase(java.util.Locale.ROOT));
+								String s = highlightMention ? plainText : formattedText;
 								GlStateManager.enableBlend();
-								this.mc.fontRendererObj.drawStringWithShadow(s, (float) b0, (float) (i2 - 8),
-										16777215 + (l1 << 24));
+								if(showTimestamps) {
+									this.mc.fontRendererObj.drawStringWithShadow(chatline.getTimestamp(
+											pvpConfig.chatTimestamp24Hour) + " ", (float) b0, (float) (i2 - 8),
+											0x009BA8B8 + (l1 << 24));
+								}
+								this.mc.fontRendererObj.drawStringWithShadow(s, (float) (b0 + timestampWidth),
+										(float) (i2 - 8), highlightMention ? 0x00FFD166 + (l1 << 24)
+												: 16777215 + (l1 << 24));
 								GlStateManager.disableAlpha();
 								GlStateManager.disableBlend();
 							}
@@ -141,16 +163,26 @@ public class GuiNewChat extends Gui {
 	 * an existing Chat Line of that ID from the GUI
 	 */
 	public void printChatMessageWithOptionalDeletion(IChatComponent parIChatComponent, int parInt1) {
-		this.setChatLine(parIChatComponent, parInt1, this.mc.ingameGUI.getUpdateCounter(), false);
+		this.setChatLine(parIChatComponent, parInt1, this.mc.ingameGUI.getUpdateCounter(), false,
+				System.currentTimeMillis());
 		logger.info("[CHAT] " + parIChatComponent.getUnformattedText());
 	}
 
-	private void setChatLine(IChatComponent parIChatComponent, int parInt1, int parInt2, boolean parFlag) {
+	private void setChatLine(IChatComponent parIChatComponent, int parInt1, int parInt2, boolean parFlag,
+			long timestampMillis) {
 		if (parInt1 != 0) {
 			this.deleteChatLine(parInt1);
 		}
 
-		int i = MathHelper.floor_float((float) this.getChatWidth() / this.getChatScale());
+		PvpClient pvpClient = PvpClient.getInstance();
+		boolean showTimestamps = pvpClient != null && pvpClient.getConfigStore().getConfig().enabled
+				&& pvpClient.getConfigStore().getConfig().chatTimestamps;
+		int timestampWidth = showTimestamps
+				? this.mc.fontRendererObj.getStringWidth(
+						pvpClient.getConfigStore().getConfig().chatTimestamp24Hour ? "00:00 " : "12:00 AM ")
+				: 0;
+		int i = Math.max(1, MathHelper.floor_float((float) this.getChatWidth() / this.getChatScale())
+				- timestampWidth);
 		List list = GuiUtilRenderComponents.func_178908_a(parIChatComponent, i, this.mc.fontRendererObj, false, false);
 		boolean flag = this.getChatOpen();
 
@@ -160,7 +192,8 @@ public class GuiNewChat extends Gui {
 				this.scroll(1);
 			}
 
-			this.field_146253_i.add(0, new ChatLine(parInt2, (IChatComponent) list.get(j), parInt1));
+			this.field_146253_i.add(0,
+					new ChatLine(parInt2, (IChatComponent) list.get(j), parInt1, timestampMillis));
 		}
 
 		while (this.field_146253_i.size() > 100) {
@@ -168,7 +201,7 @@ public class GuiNewChat extends Gui {
 		}
 
 		if (!parFlag) {
-			this.chatLines.add(0, new ChatLine(parInt2, parIChatComponent, parInt1));
+			this.chatLines.add(0, new ChatLine(parInt2, parIChatComponent, parInt1, timestampMillis));
 
 			while (this.chatLines.size() > 100) {
 				this.chatLines.remove(this.chatLines.size() - 1);
@@ -183,7 +216,8 @@ public class GuiNewChat extends Gui {
 
 		for (int i = this.chatLines.size() - 1; i >= 0; --i) {
 			ChatLine chatline = (ChatLine) this.chatLines.get(i);
-			this.setChatLine(chatline.getChatComponent(), chatline.getChatLineID(), chatline.getUpdatedCounter(), true);
+			this.setChatLine(chatline.getChatComponent(), chatline.getChatLineID(), chatline.getUpdatedCounter(), true,
+					chatline.getTimestampMillis());
 		}
 
 	}
@@ -248,6 +282,13 @@ public class GuiNewChat extends Gui {
 			int k = parInt2 / i - 27;
 			j = MathHelper.floor_float((float) j / f);
 			k = MathHelper.floor_float((float) k / f);
+			PvpClient pvpClient = PvpClient.getInstance();
+			if(pvpClient != null && pvpClient.getConfigStore().getConfig().enabled
+					&& pvpClient.getConfigStore().getConfig().chatTimestamps) {
+				int timestampWidth = this.mc.fontRendererObj.getStringWidth(
+						pvpClient.getConfigStore().getConfig().chatTimestamp24Hour ? "00:00 " : "12:00 AM ");
+				j -= timestampWidth;
+			}
 			if (j >= 0 && k >= 0) {
 				int l = Math.min(this.getLineCount(), this.field_146253_i.size());
 				if (j <= MathHelper.floor_float((float) this.getChatWidth() / this.getChatScale())

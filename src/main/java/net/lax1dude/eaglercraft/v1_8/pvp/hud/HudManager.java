@@ -83,6 +83,10 @@ public final class HudManager {
 				HudModuleInfo.Category.WORLD);
 		register(new TextHud(minecraft, "low_health", TextHud.Type.LOW_HEALTH), "Low Health Warning",
 				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "food_info", TextHud.Type.FOOD_INFO), "Hunger and Saturation",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "item_count", TextHud.Type.ITEM_COUNT), "Held Item Counter",
+				HudModuleInfo.Category.PLAYER);
 	}
 
 	private void register(HudElement element, String name, HudModuleInfo.Category category) {

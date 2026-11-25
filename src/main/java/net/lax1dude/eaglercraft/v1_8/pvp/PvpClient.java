@@ -174,6 +174,13 @@ public final class PvpClient {
 				&& instance.configStore.getConfig().fullbright ? 16.0f : configuredGamma;
 	}
 
+	public static float getConfiguredFov(float vanillaFov) {
+		PvpClient client = instance;
+		PvpConfig config = client == null ? null : client.configStore.getConfig();
+		return config != null && config.enabled && config.customFovEnabled && !client.minecraft.isZoomKey
+				? config.customFov : vanillaFov;
+	}
+
 	public boolean renderCustomCrosshair(int screenWidth, int screenHeight) {
 		PvpConfig config = configStore.getConfig();
 		if(!config.enabled || !config.crosshairEnabled || config.crosshairStyle == PvpConfig.CrosshairStyle.VANILLA) {
