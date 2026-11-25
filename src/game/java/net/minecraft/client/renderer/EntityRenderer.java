@@ -409,20 +409,34 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		boolean toggleMode = PvpClient.isFreelookToggleMode();
 		boolean pressed = this.mc.gameSettings.keyBindPvpFreelook.isPressed();
 		boolean keyDown = this.mc.gameSettings.keyBindPvpFreelook.isKeyDown();
+		if (this.freelookActive
+				&& (this.freelookEntity != player || this.freelookWorld != this.mc.theWorld)) {
+			this.endFreelook();
+			this.freelookToggleRequested = false;
+			this.freelookBlockedUntilRelease = keyDown;
+			return;
+		}
+
 		boolean valid = focused && PvpClient.isFreelookEnabled() && this.mc.theWorld != null && player != null
 				&& player.getHealth() > 0.0F && this.mc.currentScreen == null && this.mc.inGameHasFocus
 				&& !this.mc.gameSettings.debugCamEnable && viewEntity == player;
 		if (!valid) {
 			this.endFreelook();
 			this.freelookToggleRequested = false;
-			this.freelookBlockedUntilRelease = false;
+			this.freelookBlockedUntilRelease = keyDown;
 			return;
+		}
+
+		if (this.freelookBlockedUntilRelease) {
+			if (keyDown) {
+				return;
+			}
+			this.freelookBlockedUntilRelease = false;
 		}
 
 		if (toggleMode) {
 			if (pressed) {
 				this.freelookToggleRequested = !this.freelookToggleRequested;
-				this.freelookBlockedUntilRelease = false;
 			}
 		} else {
 			this.freelookToggleRequested = false;
@@ -434,10 +448,6 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			this.endFreelook();
 			return;
 		}
-		if (this.freelookBlockedUntilRelease) {
-			return;
-		}
-
 		if (this.freelookActive && this.mc.gameSettings.thirdPersonView != this.freelookOriginalPerspective) {
 			this.freelookToggleRequested = false;
 			this.freelookBlockedUntilRelease = !toggleMode && keyDown;
