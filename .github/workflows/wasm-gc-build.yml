@@ -1,0 +1,56 @@
+name: WASM-GC Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle caching
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build WASM-GC client
+        run: ./gradlew --no-daemon -Dorg.gradle.jvmargs="-Xmx2G -Xms1G" target_teavm_wasm_gc:makeMainWasmClientBundle
+
+      - name: Verify and ZIP browser bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="target_teavm_wasm_gc/javascript_dist"
+          required_files=(
+            "index.html"
+            "bootstrap.js"
+            "assets.epw"
+            "favicon.png"
+            "EaglercraftX_1.8_WASM-GC_Offline_Download.html"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -s "$bundle_dir/$file" ]]; then
+              echo "Missing expected WASM-GC output: $bundle_dir/$file" >&2
+              exit 1
+            fi
+          done
+
+          mkdir -p target_teavm_wasm_gc/build
+          (cd "$bundle_dir" && zip -r ../build/Dicestack-PvP-WASM-GC.zip .)
+
+      - name: Upload browser-ready WASM-GC bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dicestack-PvP-WASM-GC
+          path: target_teavm_wasm_gc/build/Dicestack-PvP-WASM-GC.zip
+          if-no-files-found: error
