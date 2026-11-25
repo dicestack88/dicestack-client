@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.DeferredStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.EaglerDeferredPipeline;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.ShadersRenderPassFuture;
@@ -190,7 +191,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 								Minecraft.getMinecraft().getTextureManager()
 										.bindTexture(TextureMap.locationBlocksTexture);
 								RenderItem.this.renderModel(model, stack);
-								if (pass != PassType.SHADOW && stack.hasEffect()) {
+								if (pass != PassType.SHADOW && stack.hasEffect() && PvpClient.isGlintEnabled()) {
 									GlStateManager.color(1.5F, 0.5F, 1.5F, 1.0F);
 									DeferredStateManager.setDefaultMaterialConstants();
 									DeferredStateManager.setRoughnessConstant(0.05f);
@@ -207,7 +208,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 					}
 				} else {
 					this.renderModel(model, stack);
-					if (stack.hasEffect()) {
+					if (stack.hasEffect() && PvpClient.isGlintEnabled()) {
 						if (DeferredStateManager.isInDeferredPass()) {
 							if (DeferredStateManager.forwardCallbackHandler != null
 									&& !DeferredStateManager.isEnableShadowRender()) {
@@ -258,6 +259,13 @@ public class RenderItem implements IResourceManagerReloadListener {
 	private void renderEffect(IBakedModel model, ItemStack stack) {
 		if (Config.isCustomItems() && (CustomItems.renderCustomEffect(this, stack, model) || !CustomItems.isUseGlint()))
 			return;
+		float glintIntensity = PvpClient.getGlintIntensity();
+		if(glintIntensity <= 0.0f || !PvpClient.isGlintEnabled()) {
+			return;
+		}
+		int glintColor = PvpClient.getGlintColor();
+		int alpha = Math.max(0, Math.min(255, (int) (glintIntensity * 255.0f)));
+		int renderColor = (alpha << 24) | (glintColor & 0x00FFFFFF);
 		GlStateManager.depthMask(false);
 		GlStateManager.depthFunc(GL_EQUAL);
 		GlStateManager.disableLighting();
@@ -268,14 +276,14 @@ public class RenderItem implements IResourceManagerReloadListener {
 		float f = (float) (Minecraft.getSystemTime() % 3000L) / 3000.0F / 8.0F;
 		GlStateManager.translate(f, 0.0F, 0.0F);
 		GlStateManager.rotate(-50.0F, 0.0F, 0.0F, 1.0F);
-		this.renderModel(model, -8372020);
+		this.renderModel(model, renderColor);
 		GlStateManager.popMatrix();
 		GlStateManager.pushMatrix();
 		GlStateManager.scale(8.0F, 8.0F, 8.0F);
 		float f1 = (float) (Minecraft.getSystemTime() % 4873L) / 4873.0F / 8.0F;
 		GlStateManager.translate(-f1, 0.0F, 0.0F);
 		GlStateManager.rotate(10.0F, 0.0F, 0.0F, 1.0F);
-		this.renderModel(model, -8372020);
+		this.renderModel(model, renderColor);
 		GlStateManager.popMatrix();
 		GlStateManager.matrixMode(GL_MODELVIEW);
 		GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

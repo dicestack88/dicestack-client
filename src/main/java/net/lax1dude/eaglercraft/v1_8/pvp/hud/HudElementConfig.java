@@ -17,6 +17,7 @@ public final class HudElementConfig {
 	}
 
 	public boolean enabled;
+	public boolean favorite;
 	public Anchor anchor;
 	public int offsetX;
 	public int offsetY;
@@ -57,6 +58,7 @@ public final class HudElementConfig {
 		HudElementConfig result = new HudElementConfig(defaults.enabled, defaults.anchor, defaults.offsetX,
 				defaults.offsetY, defaults.scale);
 		result.enabled = json.optBoolean("enabled", defaults.enabled);
+		result.favorite = json.optBoolean("favorite", defaults.favorite);
 		String anchorName = json.optString("anchor", defaults.anchor.name());
 		try {
 			result.anchor = Anchor.valueOf(anchorName);
@@ -99,6 +101,7 @@ public final class HudElementConfig {
 	public JSONObject toJson() {
 		JSONObject json = new JSONObject();
 		json.put("enabled", enabled);
+		json.put("favorite", favorite);
 		json.put("anchor", anchor.name());
 		json.put("offsetX", offsetX);
 		json.put("offsetY", offsetY);

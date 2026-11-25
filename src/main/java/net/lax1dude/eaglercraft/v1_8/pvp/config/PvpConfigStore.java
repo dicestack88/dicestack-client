@@ -32,6 +32,16 @@ public final class PvpConfigStore {
 		saveAt = EagRuntime.steadyTimeMillis() + SAVE_DELAY_MILLIS;
 	}
 
+	public void installImportedConfig(PvpConfig imported) {
+		if(imported == null || imported.getLoadedVersion() > PvpConfig.CONFIG_VERSION) {
+			throw new IllegalArgumentException("Invalid configuration version");
+		}
+		this.config = imported;
+		dirty = true;
+		saveAt = EagRuntime.steadyTimeMillis() + SAVE_DELAY_MILLIS;
+		saveNow();
+	}
+
 	public void tick() {
 		if(dirty && EagRuntime.steadyTimeMillis() >= saveAt) {
 			saveNow();

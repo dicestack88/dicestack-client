@@ -1,7 +1,14 @@
 name: WASM-GC Build
 
+permissions:
+  contents: read
+  actions: read
+
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - master

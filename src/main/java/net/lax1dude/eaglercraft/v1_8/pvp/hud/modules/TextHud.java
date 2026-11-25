@@ -14,8 +14,10 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.init.Items;
+import net.minecraft.item.ItemFood;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 
 public final class TextHud implements HudElement {
 
@@ -42,7 +44,10 @@ public final class TextHud implements HudElement {
 		BLOCK_INFO,
 		DAY_COUNTER,
 		LIGHT_LEVEL,
-		LOW_HEALTH
+		LOW_HEALTH,
+		FOOD_INFO,
+		ITEM_COUNT,
+		INVENTORY_PREVIEW
 	}
 
 	private final Minecraft minecraft;
@@ -75,6 +80,15 @@ public final class TextHud implements HudElement {
 	private int cachedLightY = Integer.MIN_VALUE;
 	private int cachedLightZ = Integer.MIN_VALUE;
 	private BlockPos cachedLightPosition;
+	private ItemStack cachedCountStack;
+	private int cachedItemCount = Integer.MIN_VALUE;
+	private int cachedFood = Integer.MIN_VALUE;
+	private int cachedFoodSaturation = Integer.MIN_VALUE;
+	private int cachedFoodExhaustion = Integer.MIN_VALUE;
+	private int cachedFoodEstimate = Integer.MIN_VALUE;
+	private int cachedFoodSaturationEstimate = Integer.MIN_VALUE;
+	private ItemStack cachedFoodStack;
+	private String cachedInventory;
 
 	public TextHud(Minecraft minecraft, String id, Type type) {
 		this.minecraft = minecraft;
@@ -246,7 +260,7 @@ public final class TextHud implements HudElement {
 			}
 			break;
 		case SERVER_ADDRESS:
-			if(context.config.hideServerAddress) {
+			if(context.config.hideServerAddress || context.config.streamerMode) {
 				if(!"Private".equals(cachedDetail)) {
 					cachedDetail = "Private";
 					setText("Server: Private");
@@ -329,7 +343,7 @@ public final class TextHud implements HudElement {
 					setText("Target: None");
 				}
 			}else {
-				String targetName = target.getName();
+				String targetName = PvpClient.getPrivateName(target.getName());
 				int targetHealth = target instanceof EntityLivingBase
 						? Math.round(((EntityLivingBase) target).getHealth() * 10.0f) : Integer.MIN_VALUE;
 				if(!targetName.equals(cachedTargetName) || targetHealth != cachedTargetHealth) {
@@ -398,6 +412,94 @@ public final class TextHud implements HudElement {
 				setText(healthPercent <= thresholdTenths ? "LOW HEALTH: " + healthPercent / 10.0f : "Health OK");
 			}
 			break;
+		case FOOD_INFO:
+			refreshFoodInfo();
+			break;
+		case ITEM_COUNT:
+			refreshItemCount();
+			break;
+		case INVENTORY_PREVIEW:
+			refreshInventoryPreview();
+			break;
+		}
+	}
+
+	private void refreshInventoryPreview() {
+		StringBuilder text = new StringBuilder("Inventory: ");
+		int shown = 0;
+		for(int i = 0; i < minecraft.thePlayer.inventory.mainInventory.length && shown < 6; ++i) {
+			ItemStack item = minecraft.thePlayer.inventory.mainInventory[i];
+			if(item == null) {
+				continue;
+			}
+			if(shown++ > 0) {
+				text.append(", ");
+			}
+			text.append(item.getDisplayName());
+			if(item.stackSize > 1) {
+				text.append(" x").append(item.stackSize);
+			}
+		}
+		if(shown == 0) {
+			text.append("Empty");
+		}
+		String inventory = text.toString();
+		if(!inventory.equals(cachedInventory)) {
+			cachedInventory = inventory;
+			setText(inventory);
+		}
+	}
+
+	private void refreshFoodInfo() {
+		net.minecraft.util.FoodStats foodStats = minecraft.thePlayer.getFoodStats();
+		int food = foodStats.getFoodLevel();
+		int saturation = Math.round(foodStats.getSaturationLevel() * 10.0f);
+		int exhaustion = Math.round(foodStats.getFoodExhaustionLevel() * 10.0f);
+		ItemStack held = minecraft.thePlayer.getHeldItem();
+		int foodEstimate = 0;
+		int saturationEstimate = saturation;
+		if(held != null && held.getItem() instanceof ItemFood) {
+			ItemFood itemFood = (ItemFood) held.getItem();
+			foodEstimate = Math.min(20, food + itemFood.getHealAmount(held)) - food;
+			saturationEstimate = Math.round(Math.min(food + foodEstimate,
+					foodStats.getSaturationLevel() + itemFood.getHealAmount(held)
+							* itemFood.getSaturationModifier(held) * 2.0f) * 10.0f);
+		}
+		if(food != cachedFood || saturation != cachedFoodSaturation || exhaustion != cachedFoodExhaustion
+				|| held != cachedFoodStack || foodEstimate != cachedFoodEstimate
+				|| saturationEstimate != cachedFoodSaturationEstimate) {
+			cachedFood = food;
+			cachedFoodSaturation = saturation;
+			cachedFoodExhaustion = exhaustion;
+			cachedFoodStack = held;
+			cachedFoodEstimate = foodEstimate;
+			cachedFoodSaturationEstimate = saturationEstimate;
+			String text = "Food: " + food + "/20  Saturation: " + saturation / 10.0f
+					+ "  Exhaustion: " + exhaustion / 10.0f;
+			if(foodEstimate > 0) {
+				text += "  Held food estimate: +" + foodEstimate + " food, saturation "
+						+ saturationEstimate / 10.0f;
+			}
+			setText(text);
+		}
+	}
+
+	private void refreshItemCount() {
+		ItemStack held = minecraft.thePlayer.getHeldItem();
+		int count = 0;
+		if(held != null) {
+			for(int i = 0; i < minecraft.thePlayer.inventory.mainInventory.length; ++i) {
+				ItemStack item = minecraft.thePlayer.inventory.mainInventory[i];
+				if(item != null && item.getItem() == held.getItem()
+						&& item.getMetadata() == held.getMetadata()) {
+					count += item.stackSize;
+				}
+			}
+		}
+		if(held != cachedCountStack || count != cachedItemCount) {
+			cachedCountStack = held;
+			cachedItemCount = count;
+			setText(held == null ? "Item Count: None" : "Item Count: " + count);
 		}
 	}
 

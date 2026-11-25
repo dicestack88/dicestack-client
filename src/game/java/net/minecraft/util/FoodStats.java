@@ -149,6 +149,10 @@ public class FoodStats {
 		return this.foodSaturationLevel;
 	}
 
+	public float getFoodExhaustionLevel() {
+		return this.foodExhaustionLevel;
+	}
+
 	public void setFoodLevel(int foodLevelIn) {
 		this.foodLevel = foodLevelIn;
 	}

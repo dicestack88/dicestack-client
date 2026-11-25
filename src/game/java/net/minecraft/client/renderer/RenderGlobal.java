@@ -32,6 +32,7 @@ import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.VertexFormat;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.DeferredStateManager;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.DynamicLightManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.EaglerDeferredConfig;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.EaglerDeferredPipeline;
@@ -1381,14 +1382,16 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 			RenderHelper.disableStandardItemLighting();
 			float[] afloat = this.theWorld.provider
-					.calcSunriseSunsetColors(this.theWorld.getCelestialAngle(partialTicks), partialTicks);
+					.calcSunriseSunsetColors(PvpClient.getLocalTimeCelestialAngle(
+							this.theWorld.getCelestialAngle(partialTicks)), partialTicks);
 			if (afloat != null) {
 				GlStateManager.disableTexture2D();
 				GlStateManager.shadeModel(GL_SMOOTH);
 				GlStateManager.pushMatrix();
 				GlStateManager.rotate(90.0F, 1.0F, 0.0F, 0.0F);
 				GlStateManager.rotate(
-						MathHelper.sin(this.theWorld.getCelestialAngleRadians(partialTicks)) < 0.0F ? 180.0F : 0.0F,
+						MathHelper.sin(PvpClient.getLocalTimeCelestialAngleRadians(
+								this.theWorld.getCelestialAngleRadians(partialTicks))) < 0.0F ? 180.0F : 0.0F,
 						0.0F, 0.0F, 1.0F);
 				GlStateManager.rotate(90.0F, 0.0F, 0.0F, 1.0F);
 				float f6 = afloat[0];
@@ -1428,7 +1431,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			GlStateManager.color(1.0F, 1.0F, 1.0F, f16);
 			GlStateManager.rotate(-90.0F, 0.0F, 1.0F, 0.0F);
 			CustomSky.renderSky(this.theWorld, this.renderEngine, partialTicks);
-			GlStateManager.rotate(this.theWorld.getCelestialAngle(partialTicks) * 360.0F, 1.0F, 0.0F, 0.0F);
+			GlStateManager.rotate(PvpClient.getLocalTimeCelestialAngle(
+					this.theWorld.getCelestialAngle(partialTicks)) * 360.0F, 1.0F, 0.0F, 0.0F);
 			this.renderEngine.bindTexture(locationSunPng);
 			GlStateManager.callList(glSunList);
 			this.renderEngine.bindTexture(locationMoonPhasesPng);
@@ -1716,10 +1720,17 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			float parFloat1) {
 		if (partialTicks == 0 && movingObjectPositionIn != null
 				&& movingObjectPositionIn.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+			if(!PvpClient.isBlockOutlineEnabled()) {
+				return;
+			}
 			GlStateManager.enableBlend();
 			GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-			GlStateManager.color(0.0F, 0.0F, 0.0F, 0.4F);
-			EaglercraftGPU.glLineWidth(2.0F);
+			int outlineColor = PvpClient.getBlockOutlineColor();
+			GlStateManager.color(((outlineColor >> 16) & 255) / 255.0f,
+					((outlineColor >> 8) & 255) / 255.0f,
+					(outlineColor & 255) / 255.0f,
+					((outlineColor >> 24) & 255) / 255.0f);
+			EaglercraftGPU.glLineWidth(PvpClient.getBlockOutlineThickness());
 			GlStateManager.disableTexture2D();
 			GlStateManager.depthMask(false);
 			float f = 0.002F;

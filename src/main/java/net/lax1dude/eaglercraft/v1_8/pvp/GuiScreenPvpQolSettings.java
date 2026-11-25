@@ -3,15 +3,22 @@ package net.lax1dude.eaglercraft.v1_8.pvp;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-			{ 20, 21, 22, 23, 24, 25, 26, 27, 28 },
-			{ 30, 31, 32, 33, 34, 35, 38 },
+			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69 },
+			{ 30, 31, 32, 33, 34, 35, 38, 70, 71, 72, 93, 94, 95, 96, 100 },
 			{ 40, 41, 42, 43, 44, 45, 46, 47 },
-			{ 50, 51, 52, 53, 54, 55, 56, 57 }
+			{ 50, 51, 52, 53, 54, 55, 56, 57 },
+			{ 60, 61, 62, 63, 64, 78, 101 },
+			{ 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 97, 98, 99 }
 	};
 	private static final int[][] CROSSHAIR_COLORS = {
 			{ 255, 255, 255 }, { 83, 214, 163 }, { 255, 85, 85 }, { 255, 209, 102 }, { 112, 167, 255 }
@@ -19,6 +26,8 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	private final PvpClient pvpClient;
 	private final GuiScreen parent;
+	private GuiTextField searchField;
+	private String searchText = "";
 	private int panelX;
 	private int panelY;
 	private int panelWidth;
@@ -37,20 +46,24 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		panelHeight = Math.min(226, Math.max(112, height - 8));
 		panelX = (width - panelWidth) / 2;
 		panelY = Math.max(2, (height - panelHeight) / 2);
-		int rows = (PAGES[page].length + 1) / 2;
-		rowHeight = Math.max(10, Math.min(22,
-				(panelHeight - 77 - Math.max(0, rows - 1) * 3) / Math.max(1, rows)));
 		buttonList.clear();
+		searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31, panelWidth - 16, 18);
+		searchField.setMaxStringLength(32);
+		searchField.setText(searchText);
+		List<Integer> displayedIds = getDisplayedButtonIds();
+		int rows = (displayedIds.size() + 1) / 2;
+		rowHeight = Math.max(10, Math.min(22,
+				(panelHeight - 98 - Math.max(0, rows - 1) * 2) / Math.max(1, rows)));
 		int gap = 4;
 		int buttonWidth = Math.max(1, (panelWidth - 24 - gap) / 2);
 		int buttonX = panelX + 8;
-		int startY = panelY + 36;
-		int[] pageIds = PAGES[page];
-		for(int i = 0; i < pageIds.length; ++i) {
+		int startY = panelY + 55;
+		for(int i = 0; i < displayedIds.size(); ++i) {
 			int column = i % 2;
 			int row = i / 2;
-			buttonList.add(new GuiButton(pageIds[i], buttonX + column * (buttonWidth + gap),
-					startY + row * (rowHeight + 3), buttonWidth, rowHeight, getLabel(pageIds[i])));
+			int id = displayedIds.get(i);
+			buttonList.add(new GuiButton(id, buttonX + column * (buttonWidth + gap),
+					startY + row * (rowHeight + 2), buttonWidth, rowHeight, getLabel(id)));
 		}
 		int footerY = panelY + panelHeight - 25;
 		buttonList.add(new GuiButton(12, panelX + 8, footerY, 42, 20, "<"));
@@ -59,13 +72,25 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	}
 
 	@Override
+	public void updateScreen() {
+		searchField.updateCursorCounter();
+	}
+
+	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
 		drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xE8121E2A);
 		drawRect(panelX, panelY, panelX + panelWidth, panelY + 2, 0xFF53D6A3);
 		drawRect(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, 0xAA53D6A3);
-		drawCenteredString(fontRendererObj, "DICESTACK  /  " + pageTitle(), width / 2, panelY + 10, 0xFFF1F7F5);
-		drawCenteredString(fontRendererObj, (page + 1) + " / " + PAGES.length, width / 2, panelY + 22, 0xFF9BA8B8);
+		drawCenteredString(fontRendererObj, "DICESTACK  /  " + pageTitle(), width / 2, panelY + 9, 0xFFF1F7F5);
+		if(searchField.getText().isEmpty()) {
+			fontRendererObj.drawStringWithShadow("Search all settings...", searchField.xPosition + 4,
+					searchField.yPosition + 5, 0xFF758396);
+		}
+		searchField.drawTextBox();
+		int pageCount = searchText.isEmpty() ? PAGES.length : Math.max(1, (getFilteredSettingIds().size() + 11) / 12);
+		drawCenteredString(fontRendererObj, (page + 1) + " / " + pageCount, width / 2,
+				panelY + panelHeight - 35, 0xFF9BA8B8);
 		super.drawScreen(mouseX, mouseY, partialTicks);
 	}
 
@@ -77,11 +102,20 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 			mc.displayGuiScreen(parent);
 			return;
 		case 12:
-			page = (page + PAGES.length - 1) % PAGES.length;
+			if(searchText.isEmpty()) {
+				page = (page + PAGES.length - 1) % PAGES.length;
+			}else {
+				int count = Math.max(1, (getFilteredSettingIds().size() + 11) / 12);
+				page = (page + count - 1) % count;
+			}
 			initGui();
 			return;
 		case 13:
-			page = (page + 1) % PAGES.length;
+			if(searchText.isEmpty()) {
+				page = (page + 1) % PAGES.length;
+			}else {
+				page = (page + 1) % Math.max(1, (getFilteredSettingIds().size() + 11) / 12);
+			}
 			initGui();
 			return;
 		case 1: config.toggleSprintEnabled = !config.toggleSprintEnabled; break;
@@ -103,6 +137,78 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 26: config.disableEntityShadows = !config.disableEntityShadows; break;
 		case 27: mc.gameSettings.viewBobbing = !mc.gameSettings.viewBobbing; mc.gameSettings.saveOptions(); break;
 		case 28: mc.gameSettings.smoothCamera = !mc.gameSettings.smoothCamera; mc.gameSettings.saveOptions(); break;
+		case 29: config.customFovEnabled = !config.customFovEnabled; break;
+		case 58: config.customFov = Math.max(30.0f, config.customFov - 5.0f); break;
+		case 59: config.customFov = Math.min(110.0f, config.customFov + 5.0f); break;
+		case 60:
+			config.chatTimestamps = !config.chatTimestamps;
+			mc.ingameGUI.getChatGUI().refreshChat();
+			break;
+		case 61:
+			config.chatTimestamp24Hour = !config.chatTimestamp24Hour;
+			mc.ingameGUI.getChatGUI().refreshChat();
+			break;
+		case 62: config.chatHighlightMentions = !config.chatHighlightMentions; break;
+		case 63: mc.gameSettings.chatOpacity = Math.max(0.0f, mc.gameSettings.chatOpacity - 0.1f); mc.gameSettings.saveOptions(); break;
+		case 64: mc.gameSettings.chatOpacity = Math.min(1.0f, mc.gameSettings.chatOpacity + 0.1f); mc.gameSettings.saveOptions(); break;
+		case 65: config.thirdPersonDistance = Math.max(2.0f, config.thirdPersonDistance - 0.5f); break;
+		case 66: config.thirdPersonDistance = Math.min(12.0f, config.thirdPersonDistance + 0.5f); break;
+		case 67: config.zoomSmoothness=Math.max(0,config.zoomSmoothness-10);break;
+		case 68: config.zoomSmoothness=Math.min(100,config.zoomSmoothness+10);break;
+		case 69: config.localTime=Math.max(0,config.localTime-1000);break;
+		case 93: config.localTime=Math.min(24000,config.localTime+1000);break;
+		case 70: config.clearWater = !config.clearWater; break;
+		case 71: config.customFogColorEnabled = !config.customFogColorEnabled; break;
+		case 72: config.localTimeEnabled = !config.localTimeEnabled; break;
+		case 73: config.streamerMode = !config.streamerMode; break;
+		case 74: config.hideUsername = !config.hideUsername; break;
+		case 75: config.notificationsEnabled = !config.notificationsEnabled; break;
+		case 76: config.screenshotMode = !config.screenshotMode; break;
+		case 78: config.chatCompact = !config.chatCompact; break;
+		case 101:
+			config.chatBackgroundColor=config.chatBackgroundColor==0xFF000000?0xFF172638:
+				config.chatBackgroundColor==0xFF172638?0xFF26384B:0xFF000000;
+			break;
+		case 79:
+			int[] fpsLimits = {30,60,120,144,260};
+			int index=0;
+			for(int i=0;i<fpsLimits.length;++i) if(config.fpsLimit==fpsLimits[i]) {index=i;break;}
+			config.fpsLimit=fpsLimits[(index+1)%fpsLimits.length];
+			mc.gameSettings.limitFramerate=config.fpsLimit;
+			mc.gameSettings.saveOptions();
+			break;
+		case 80:
+			PvpConfig.PerformanceProfile profile=config.performanceProfile;
+			int nextProfile=(profile.ordinal()+1)%PvpConfig.PerformanceProfile.values().length;
+			config.applyPerformanceProfile(PvpConfig.PerformanceProfile.values()[nextProfile]);
+			mc.gameSettings.limitFramerate=config.fpsLimit;
+			mc.gameSettings.saveOptions();
+			break;
+		case 81: pvpClient.exportConfig(); return;
+		case 82: pvpClient.importConfigFromClipboard(); break;
+		case 83: config.resetVisualCategory(); break;
+		case 84: config.resetPrivacyCategory(); break;
+		case 85: config.resetChatCategory(); break;
+		case 86: config.heldItemScale=Math.max(0.5f,config.heldItemScale-0.1f);break;
+		case 87: config.heldItemScale=Math.min(2.0f,config.heldItemScale+0.1f);break;
+		case 88: config.heldItemOffsetX=Math.max(-1.0f,config.heldItemOffsetX-0.05f);break;
+		case 89: config.heldItemOffsetX=Math.min(1.0f,config.heldItemOffsetX+0.05f);break;
+		case 90: config.heldItemOffsetY=Math.max(-1.0f,config.heldItemOffsetY-0.05f);break;
+		case 91: config.heldItemOffsetY=Math.min(1.0f,config.heldItemOffsetY+0.05f);break;
+		case 92: config.glintEnabled=!config.glintEnabled;break;
+		case 94: config.blockOutlineEnabled=!config.blockOutlineEnabled;break;
+		case 95: config.blockOutlineThickness=Math.max(1,config.blockOutlineThickness-1);break;
+		case 96: config.blockOutlineThickness=Math.min(8,config.blockOutlineThickness+1);break;
+		case 97: config.glintIntensity=Math.max(0.0f,config.glintIntensity-0.1f);break;
+		case 98: config.glintIntensity=Math.min(2.0f,config.glintIntensity+0.1f);break;
+		case 99:
+			config.glintColor=config.glintColor==0xFF5030FF?0xFF55DDA0:
+				config.glintColor==0xFF55DDA0?0xFFFF5555:0xFF5030FF;
+			break;
+		case 100:
+			config.customFogColor=config.customFogColor==0xFFB6C8D8?0xFFB8A8D8:
+				config.customFogColor==0xFFB8A8D8?0xFFD8B6A8:0xFFB6C8D8;
+			break;
 		case 30: config.hideFireOverlay = !config.hideFireOverlay; break;
 		case 31: config.hidePumpkinOverlay = !config.hidePumpkinOverlay; break;
 		case 32: config.hidePortalOverlay = !config.hidePortalOverlay; break;
@@ -131,7 +237,60 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		default: return;
 		}
 		pvpClient.getConfigStore().markDirty();
+		if(!searchText.isEmpty()) {
+			page = 0;
+		}
 		initGui();
+	}
+
+	@Override
+	protected void keyTyped(char character, int keyCode) {
+		if(keyCode == 1 || keyCode == mc.gameSettings.keyBindClose.getKeyCode()) {
+			mc.displayGuiScreen(parent);
+			return;
+		}
+		if(searchField.textboxKeyTyped(character, keyCode)) {
+			String nextSearch = searchField.getText();
+			if(!nextSearch.equals(searchText)) {
+				searchText = nextSearch;
+				page = 0;
+				initGui();
+			}
+			return;
+		}
+		super.keyTyped(character, keyCode);
+	}
+
+	@Override
+	protected void mouseClicked(int mouseX, int mouseY, int button) {
+		searchField.mouseClicked(mouseX, mouseY, button);
+		super.mouseClicked(mouseX, mouseY, button);
+	}
+
+	private List<Integer> getDisplayedButtonIds() {
+		if(searchText.isEmpty()) {
+			List<Integer> result = new ArrayList<>();
+			for(int id : PAGES[page]) {
+				result.add(id);
+			}
+			return result;
+		}
+		List<Integer> matches = getFilteredSettingIds();
+		int start = Math.min(page * 12, matches.size());
+		return new ArrayList<>(matches.subList(start, Math.min(start + 12, matches.size())));
+	}
+
+	private List<Integer> getFilteredSettingIds() {
+		List<Integer> matches = new ArrayList<>();
+		String query = searchText.toLowerCase(Locale.ROOT);
+		for(int[] ids : PAGES) {
+			for(int id : ids) {
+				if(getLabel(id).toLowerCase(Locale.ROOT).contains(query)) {
+					matches.add(id);
+				}
+			}
+		}
+		return matches;
 	}
 
 	private String getLabel(int id) {
@@ -157,6 +316,50 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 26: return "Entity Shadows: " + (c.disableEntityShadows ? "Off" : "On");
 		case 27: return "View Bobbing: " + on(mc.gameSettings.viewBobbing);
 		case 28: return "Smooth Camera: " + on(mc.gameSettings.smoothCamera);
+		case 29: return "Custom FOV: " + on(c.customFovEnabled);
+		case 58: return "Custom FOV " + Math.round(c.customFov) + " -";
+		case 59: return "Custom FOV " + Math.round(c.customFov) + " +";
+		case 60: return "Chat Timestamps: " + on(c.chatTimestamps);
+		case 61: return "Timestamp Format: " + (c.chatTimestamp24Hour ? "24-hour" : "12-hour");
+		case 62: return "Highlight Own Name: " + on(c.chatHighlightMentions);
+		case 63: return "Chat Opacity - " + Math.round(mc.gameSettings.chatOpacity * 100.0f) + "%";
+		case 64: return "Chat Opacity + " + Math.round(mc.gameSettings.chatOpacity * 100.0f) + "%";
+		case 65: return "Third Person Distance -";
+		case 66: return "Third Person Distance +";
+		case 67: return "Zoom Smoothness -";
+		case 68: return "Zoom Smoothness: " + c.zoomSmoothness + "%";
+		case 69: return "Local Time -";
+		case 93: return "Local Time " + c.localTime + " +";
+		case 70: return "Clear Water: " + on(c.clearWater);
+		case 71: return "Custom Fog Colour: " + on(c.customFogColorEnabled);
+		case 72: return "Local Time Override: " + on(c.localTimeEnabled);
+		case 73: return "Streamer Mode: " + on(c.streamerMode);
+		case 74: return "Hide Username: " + on(c.hideUsername);
+		case 75: return "Notifications: " + on(c.notificationsEnabled);
+		case 76: return "Screenshot Mode: " + on(c.screenshotMode);
+		case 78: return "Compact Chat: " + on(c.chatCompact);
+		case 101: return "Chat Background";
+		case 79: return "FPS Limit: " + c.fpsLimit;
+		case 80: return "Performance: " + c.performanceProfile.name();
+		case 81: return "Export Configuration";
+		case 82: return "Import from Clipboard";
+		case 83: return "Reset Visual Category";
+		case 84: return "Reset Privacy Category";
+		case 85: return "Reset Chat Category";
+		case 86: return "Held Item Size -";
+		case 87: return "Held Item Size +";
+		case 88: return "Held Item X -";
+		case 89: return "Held Item X +";
+		case 90: return "Held Item Y -";
+		case 91: return "Held Item Y +";
+		case 92: return "Enchantment Glint: " + on(c.glintEnabled);
+		case 94: return "Block Outline: " + on(c.blockOutlineEnabled);
+		case 95: return "Outline Thickness -";
+		case 96: return "Outline Thickness " + c.blockOutlineThickness + " +";
+		case 97: return "Glint Intensity -";
+		case 98: return "Glint Intensity " + Math.round(c.glintIntensity*100.0f)+"%";
+		case 99: return "Glint Colour";
+		case 100: return "Fog Colour";
 		case 30: return "Hide Fire Overlay: " + on(c.hideFireOverlay);
 		case 31: return "Hide Pumpkin Overlay: " + on(c.hidePumpkinOverlay);
 		case 32: return "Hide Portal Overlay: " + on(c.hidePortalOverlay);
@@ -186,11 +389,16 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	}
 
 	private String pageTitle() {
+		if(!searchText.isEmpty()) {
+			return "SEARCH RESULTS";
+		}
 		switch(page) {
 		case 1: return "CAMERA & WORLD";
 		case 2: return "OVERLAYS & PRIVACY";
 		case 3: return "CROSSHAIR";
 		case 4: return "CROSSHAIR & WARNINGS";
+		case 5: return "CHAT DISPLAY";
+		case 6: return "PERFORMANCE & DATA";
 		default: return "QUALITY OF LIFE";
 		}
 	}

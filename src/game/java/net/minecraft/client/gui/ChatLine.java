@@ -29,11 +29,19 @@ public class ChatLine {
 	private final IChatComponent lineString;
 	private IChatComponent lineStringProfanityFilter;
 	private final int chatLineID;
+	private final long timestampMillis;
+	private String timestamp24Hour;
+	private String timestamp12Hour;
 
 	public ChatLine(int parInt1, IChatComponent parIChatComponent, int parInt2) {
+		this(parInt1, parIChatComponent, parInt2, System.currentTimeMillis());
+	}
+
+	public ChatLine(int parInt1, IChatComponent parIChatComponent, int parInt2, long timestampMillis) {
 		this.lineString = parIChatComponent;
 		this.updateCounterCreated = parInt1;
 		this.chatLineID = parInt2;
+		this.timestampMillis = timestampMillis;
 	}
 
 	public IChatComponent getChatComponent() {
@@ -53,5 +61,33 @@ public class ChatLine {
 
 	public int getChatLineID() {
 		return this.chatLineID;
+	}
+
+	public long getTimestampMillis() {
+		return timestampMillis;
+	}
+
+	public String getTimestamp(boolean use24Hour) {
+		if(use24Hour) {
+			if(timestamp24Hour == null) {
+				java.util.Date date = new java.util.Date(timestampMillis);
+				int hours = date.getHours();
+				int minutes = date.getMinutes();
+				timestamp24Hour = twoDigits(hours) + ":" + twoDigits(minutes);
+			}
+			return timestamp24Hour;
+		}
+		if(timestamp12Hour == null) {
+			java.util.Date date = new java.util.Date(timestampMillis);
+			int hours = date.getHours();
+			int minutes = date.getMinutes();
+			timestamp12Hour = (hours % 12 == 0 ? 12 : hours % 12) + ":" + twoDigits(minutes)
+					+ (hours < 12 ? " AM" : " PM");
+		}
+		return timestamp12Hour;
+	}
+
+	private String twoDigits(int value) {
+		return value < 10 ? "0" + value : Integer.toString(value);
 	}
 }
