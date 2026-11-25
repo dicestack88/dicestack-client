@@ -159,6 +159,8 @@ public class GameSettings {
 			"key.categories.misc");
 	public KeyBinding keyBindZoomCamera = new KeyBinding("key.zoomCamera", KeyboardConstants.KEY_C,
 			"key.categories.misc");
+	public KeyBinding keyBindPvpFreelook = new KeyBinding("key.pvp.freelook", KeyboardConstants.KEY_B,
+			"key.categories.misc");
 	public KeyBinding keyBindFunction = new KeyBinding("key.function", KeyboardConstants.KEY_F, "key.categories.misc");
 	public KeyBinding keyBindPvpHudEditor = new KeyBinding("key.pvp.hudEditor", KeyboardConstants.KEY_H,
 			"key.categories.misc");
@@ -255,7 +257,8 @@ public class GameSettings {
 				this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump,
 				this.keyBindSneak, this.keyBindSprint, this.keyBindDrop, this.keyBindInventory, this.keyBindChat,
 				this.keyBindPlayerList, this.keyBindPickBlock, this.keyBindCommand, this.keyBindScreenshot,
-				this.keyBindTogglePerspective, this.keyBindSmoothCamera, this.keyBindZoomCamera, this.keyBindFunction,
+				this.keyBindTogglePerspective, this.keyBindSmoothCamera, this.keyBindZoomCamera,
+				this.keyBindPvpFreelook, this.keyBindFunction,
 				this.keyBindPvpHudEditor, this.keyBindPvpHudManager, this.keyBindPvpToggleSprint,
 				this.keyBindPvpToggleSneak, this.keyBindPvpQuickReconnect, this.keyBindPvpCopyCoordinates,
 				this.keyBindPvpHideHud, this.keyBindClose }, this.keyBindsHotbar);
