@@ -8,10 +8,11 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 
 - [x] No Dynamic FOV; [x] No Hurt Tilt.
 - [x] View Bobbing and Smooth Camera use the existing vanilla settings.
-- [ ] Camera Shake controls.
+- [~] Camera shake/hurt tilt is represented by the existing No Hurt Tilt control;
+  no separate shake amplitude control is exposed.
 - [+] Custom FOV, applied locally without changing the saved vanilla FOV.
-- [ ] Improved Third-Person Distance controls.
-- [~] Zoom enable/mode/strength are configurable; smoothness is not.
+- [+] Improved Third-Person Distance controls are configurable locally.
+- [+] Zoom enable/mode/strength/smoothness are configurable.
 - [!] Freelook: player rotation is shared by local targeting and network movement;
   no verified local-only camera rotation path is available.
 
@@ -20,20 +21,24 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 - [x] Fullbright, No Fog, local rain/snow hiding, vanilla particle presets,
   entity-shadow removal and vignette hiding.
 - [x] Fire, Pumpkin and Portal overlay controls.
-- [ ] Block Shadows, Clear Water, Custom Fog Colour and Damage Flash controls.
+- [~] Clear Water, Custom Fog Colour and locally-fixed time are implemented.
+  Block Shadows and Damage Flash remain unsupported by the existing hooks.
 - [~] Custom Sky can be supplied by existing compatible resource packs; there is
   no Dicestack custom-sky setting.
-- [!] Time/Weather Changers: safely changing the visible world requires a
+- [~] Local Time Override changes sky/sun/fog presentation without changing world state.
+- [!] Weather Changers: safely changing the visible world requires a
   render-only time/weather abstraction; mutating world state is explicitly
   avoided.
 
 ## Item visuals and animations
 
-- [ ] Item Drop Physics, Custom Item Animations, Held Item Size/Position,
-  Enchantment Glint Intensity/Colour and Totem Animation Adjustments.
+- [~] Held Item Size/Position and Enchantment Glint intensity/colour are implemented.
+  Item Drop Physics, custom item animation, Totem and held-hand swing adjustments
+  are not safely exposed.
 - [ ] Explosion Particle and Block-Breaking Particle Adjustments.
 - [ ] Potion Effect Icon and Armor HUD Icon Styling.
-- [ ] Custom Hit Colour and Custom Block-Selection Outline.
+- [~] Custom Block-Selection Outline is implemented; Custom Hit Colour is not
+  backed by a reliable per-hit renderer.
 - [~] Vanilla reduced-particle settings exist, but do not expose per-effect
   animation controls.
 
@@ -49,7 +54,8 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 - [!] Password Hider/Reveal: no client-owned password-entry screen is exposed
   through the current Dicestack settings architecture; credentials are not
   stored or surfaced by this feature.
-- [ ] Streamer Mode and Username Hider.
+- [+] Streamer Mode and Username Hider are implemented for supported HUD/client
+  displays; they do not rewrite network usernames or authentication UI.
 - [~] Server Address Hider is available for the Dicestack HUD module, not every
   client-owned screen.
 - [~] Chat Privacy can hide the HUD chat display; selective filtering/replacement
@@ -64,9 +70,8 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
   highlighting; these affect rendering only and do not alter sent/received
   message components.
 - [~] Chat Opacity uses the persisted vanilla opacity setting.
-- [ ] Dicestack Chat Background Customisation, Compact Chat Mode and general
-  configurable message highlighting. Mention highlighting is the available
-  focused alternative.
+- [+] Chat background presets and Compact Chat Mode are implemented.
+  General configurable message highlighting remains beyond mention highlighting.
 - [x] Whole-chat hide control from the previous milestone.
 
 ## General client QoL
@@ -79,11 +84,12 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
   QoL settings and favourites untouched.
 - [~] Profiles can be selected/applied from the HUD module manager; no dedicated
   profile hotkey is provided.
-- [ ] Individual module keybinds, reset-by-category, Notification Controls and
-  Screenshot Mode.
-- [!] Configuration Import/Export: the current browser bridge provides clipboard
-  writing but no verified clipboard read or safe file import/export API. No
-  nonfunctional import/export controls are exposed.
+- [~] Notification Controls and Screenshot/HUD presentation mode are implemented.
+  Individual module keybinds remain unsupported by a per-module action registry.
+- [+] Reset-by-category controls reset visual, privacy and chat groups without
+  resetting unrelated HUD or global settings.
+- [+] Configuration export downloads the validated v7 JSON, and import reads
+  JSON from the existing browser clipboard API after rejecting newer versions.
 - [x] GUI Scale is available through the existing vanilla Video Settings.
 - [~] Existing vanilla tooltips remain; no Dicestack-specific tooltip system was
   added.
@@ -91,11 +97,13 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 ## Performance and comfort
 
 - [x] Vanilla particle reduction presets and optional entity-shadow removal.
-- [~] Reduced visual effects are covered by existing local visual toggles, not a
-  grouped profile.
+- [+] Performance presets change only the relevant FPS limit, weather/vignette,
+  and entity-shadow settings; Default, Balanced, Performance and Minimal are
+  reversible through the selector.
 - [~] FPS HUD value is available and inherits shared styling/scale controls.
-- [ ] Animation Reduction, FPS Limit Presets, Performance Profile and
-  Lightweight HUD Rendering Mode.
+- [+] FPS limit presets and a performance profile selector are implemented.
+- [ ] Animation Reduction and Lightweight HUD Rendering Mode remain unsupported
+  without broader renderer hooks.
 
 ## HUD modules
 
@@ -106,7 +114,7 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 - [+] Held Item Counter totals the selected item type in the player's inventory.
 - [~] Armor Status and Armor Durability are present; no icon-based preview was
   added.
-- [ ] Inventory Preview.
+- [+] Inventory Preview displays the first six non-empty inventory stacks as text.
 - [!] Attack Indicator: this client does not expose a reliable cooldown value.
 - [!] Combo Counter and Hit Accuracy: there is no dependable local hit-event
   source from which to compute these statistics; CPS is not treated as hits.
@@ -120,7 +128,7 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 
 - [x] Modern Glass and Minimal Competitive presets and the existing per-module
   overrides remain supported.
-- [+] Configuration schema v6 migrates v5 data by retaining known settings and
+- [+] Configuration schema v7 migrates v5/v6 data by retaining known settings and
   applying defaults for new settings.
 - [+] Migration, profile isolation, and v6 JSON round-trip checks passed.
 - [x] Current controls continue to use existing Eaglercraft rendering/settings

@@ -1,5 +1,7 @@
 package net.lax1dude.eaglercraft.v1_8.pvp;
 
+import java.nio.charset.StandardCharsets;
+
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfigStore;
@@ -29,6 +31,7 @@ public final class PvpClient {
 	private boolean sneakToggled;
 	private boolean zoomToggled;
 	private boolean temporaryHudHidden;
+	private boolean zoomActive;
 
 	private PvpClient(Minecraft minecraft) {
 		this.minecraft = minecraft;
@@ -52,6 +55,9 @@ public final class PvpClient {
 		runtime.tick(minecraft);
 		configStore.tick();
 		PvpConfig config = configStore.getConfig();
+		if(config.enabled && minecraft.gameSettings.limitFramerate != config.fpsLimit) {
+			minecraft.gameSettings.limitFramerate = config.fpsLimit;
+		}
 		if(minecraft.theWorld == null || minecraft.thePlayer == null || minecraft.currentScreen != null
 				|| !minecraft.inGameHasFocus || !config.enabled || !config.toggleSprintEnabled) {
 			if(sprintToggled && minecraft.thePlayer != null) {
@@ -70,6 +76,12 @@ public final class PvpClient {
 		if(minecraft.theWorld == null || minecraft.thePlayer == null) {
 			temporaryHudHidden = false;
 		}
+		if(config.enabled && zoomActive && minecraft.isZoomKey) {
+			float target = config.zoomStrength;
+			float factor = 0.05f + config.zoomSmoothness * 0.0045f;
+			minecraft.adjustedZoomValue += (target - minecraft.adjustedZoomValue) * factor;
+		}
+		zoomActive = minecraft.isZoomKey;
 	}
 
 	public void handleKeyPresses() {
@@ -78,6 +90,7 @@ public final class PvpClient {
 		boolean reconnectPressed = minecraft.gameSettings.keyBindPvpQuickReconnect.isPressed();
 		boolean copyCoordinatesPressed = minecraft.gameSettings.keyBindPvpCopyCoordinates.isPressed();
 		boolean hideHudPressed = minecraft.gameSettings.keyBindPvpHideHud.isPressed();
+		boolean screenshotPressed = minecraft.gameSettings.keyBindScreenshot.isPressed();
 		PvpConfig config = configStore.getConfig();
 		if(!config.enabled || minecraft.currentScreen != null || minecraft.theWorld == null
 				|| minecraft.thePlayer == null || !minecraft.inGameHasFocus) {
@@ -102,6 +115,9 @@ public final class PvpClient {
 			temporaryHudHidden = !temporaryHudHidden;
 			notifyHud(temporaryHudHidden ? "Dicestack HUD hidden" : "Dicestack HUD shown");
 		}
+		if(screenshotPressed && config.screenshotMode) {
+			temporaryHudHidden = true;
+		}
 	}
 
 	public boolean updateZoomKey(boolean held) {
@@ -111,15 +127,18 @@ public final class PvpClient {
 		if(!config.enabled || !config.zoomEnabled || minecraft.theWorld == null || minecraft.thePlayer == null
 				|| minecraft.currentScreen != null || !minecraft.inGameHasFocus) {
 			zoomToggled = false;
+			zoomActive = false;
 			return false;
 		}
 		if(config.zoomToggle) {
 			if(pressed) {
 				zoomToggled = !zoomToggled;
 			}
+			zoomActive = zoomToggled;
 			return zoomToggled;
 		}
 		zoomToggled = false;
+		zoomActive = held;
 		return held;
 	}
 
@@ -179,6 +198,135 @@ public final class PvpClient {
 		PvpConfig config = client == null ? null : client.configStore.getConfig();
 		return config != null && config.enabled && config.customFovEnabled && !client.minecraft.isZoomKey
 				? config.customFov : vanillaFov;
+	}
+
+	public static float getThirdPersonDistance(float vanillaDistance) {
+		PvpConfig config = instance == null ? null : instance.configStore.getConfig();
+		return config != null && config.enabled ? config.thirdPersonDistance : vanillaDistance;
+	}
+
+	public static boolean isClearWaterEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().clearWater;
+	}
+
+	public static boolean isCustomFogColorEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().customFogColorEnabled;
+	}
+
+	public static int getCustomFogColor() {
+		return instance == null ? 0xFFB6C8D8 : instance.configStore.getConfig().customFogColor;
+	}
+
+	public static boolean isLocalTimeEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().localTimeEnabled;
+	}
+
+	public static float getLocalTimeCelestialAngle(float vanillaAngle) {
+		PvpConfig config = instance == null ? null : instance.configStore.getConfig();
+		return config != null && config.enabled && config.localTimeEnabled
+				? (config.localTime % 24000) / 24000.0f : vanillaAngle;
+	}
+
+	public static float getLocalTimeCelestialAngleRadians(float vanillaAngleRadians) {
+		PvpConfig config = instance == null ? null : instance.configStore.getConfig();
+		if(config != null && config.enabled && config.localTimeEnabled) {
+			return (config.localTime % 24000) / 24000.0f * ((float) Math.PI * 2.0f);
+		}
+		return vanillaAngleRadians;
+	}
+
+	public static boolean isBlockOutlineEnabled() {
+		return instance == null || instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().blockOutlineEnabled;
+	}
+
+	public static int getBlockOutlineColor() {
+		return instance == null ? 0xFF000000 : instance.configStore.getConfig().blockOutlineColor;
+	}
+
+	public static float getBlockOutlineThickness() {
+		return instance == null ? 2.0f : instance.configStore.getConfig().blockOutlineThickness;
+	}
+
+	public static float getHeldItemScale() {
+		return instance == null ? 1.0f : instance.configStore.getConfig().enabled
+				? instance.configStore.getConfig().heldItemScale : 1.0f;
+	}
+
+	public static float getHeldItemOffsetX() {
+		return instance == null ? 0.0f : instance.configStore.getConfig().enabled
+				? instance.configStore.getConfig().heldItemOffsetX : 0.0f;
+	}
+
+	public static float getHeldItemOffsetY() {
+		return instance == null ? 0.0f : instance.configStore.getConfig().enabled
+				? instance.configStore.getConfig().heldItemOffsetY : 0.0f;
+	}
+
+	public static boolean isGlintEnabled() {
+		return instance == null || instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().glintEnabled;
+	}
+
+	public static float getGlintIntensity() {
+		return instance == null ? 1.0f : instance.configStore.getConfig().enabled
+				? instance.configStore.getConfig().glintIntensity : 1.0f;
+	}
+
+	public static int getGlintColor() {
+		return instance == null ? 0xFF5030FF : instance.configStore.getConfig().glintColor;
+	}
+
+	public static boolean isStreamerModeEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().streamerMode;
+	}
+
+	public static boolean isUsernameHidden() {
+		PvpConfig config = instance == null ? null : instance.configStore.getConfig();
+		return config != null && config.enabled && (config.streamerMode || config.hideUsername);
+	}
+
+	public static String getPrivateName(String name) {
+		return isUsernameHidden() ? "Player" : name;
+	}
+
+	public boolean exportConfig() {
+		try {
+			byte[] data = configStore.getConfig().toJson().toString().getBytes(StandardCharsets.UTF_8);
+			EagRuntime.downloadFileWithName("dicestack-pvp-config-v"
+					+ PvpConfig.CONFIG_VERSION + ".json", data);
+			notifyHud("Configuration exported");
+			return true;
+		}catch(Throwable ex) {
+			notifyHud("Could not export configuration");
+			return false;
+		}
+	}
+
+	public boolean importConfigFromClipboard() {
+		try {
+			String json = EagRuntime.getClipboard();
+			if(json == null || json.trim().isEmpty()) {
+				notifyHud("Clipboard is empty");
+				return false;
+			}
+			PvpConfig parsed = PvpConfig.fromJson(json);
+			if(parsed.getLoadedVersion() > PvpConfig.CONFIG_VERSION) {
+				notifyHud("Configuration is from a newer client");
+				return false;
+			}
+			configStore.installImportedConfig(parsed);
+			hudManager.reloadConfig(parsed);
+			notifyHud("Configuration imported");
+			return true;
+		}catch(Throwable ex) {
+			notifyHud("Could not import configuration");
+			return false;
+		}
 	}
 
 	public boolean renderCustomCrosshair(int screenWidth, int screenHeight) {
@@ -326,6 +474,10 @@ public final class PvpClient {
 	}
 
 	private void notifyHud(String message) {
+		PvpConfig config = configStore == null ? null : configStore.getConfig();
+		if(config != null && !config.notificationsEnabled) {
+			return;
+		}
 		if(minecraft.ingameGUI != null) {
 			minecraft.ingameGUI.getChatGUI().printChatMessage(new ChatComponentText("\u00a7a[Dicestack] \u00a7f" + message));
 		}

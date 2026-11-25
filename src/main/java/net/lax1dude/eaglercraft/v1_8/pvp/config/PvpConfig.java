@@ -12,7 +12,7 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class PvpConfig {
 
-	public static final int CONFIG_VERSION = 6;
+	public static final int CONFIG_VERSION = 7;
 
 	public enum CrosshairStyle {
 		VANILLA,
@@ -78,6 +78,37 @@ public final class PvpConfig {
 	public boolean chatTimestamps;
 	public boolean chatTimestamp24Hour = true;
 	public boolean chatHighlightMentions;
+	public boolean chatCompact;
+	public int chatBackgroundColor = 0xFF000000;
+	public boolean streamerMode;
+	public boolean hideUsername;
+	public boolean screenshotMode;
+	public boolean notificationsEnabled = true;
+	public float thirdPersonDistance = 4.0f;
+	public int zoomSmoothness = 60;
+	public boolean clearWater;
+	public boolean customFogColorEnabled;
+	public int customFogColor = 0xFFB6C8D8;
+	public boolean localTimeEnabled;
+	public int localTime = 12000;
+	public boolean blockOutlineEnabled = true;
+	public int blockOutlineColor = 0xFF000000;
+	public int blockOutlineThickness = 2;
+	public float heldItemScale = 1.0f;
+	public float heldItemOffsetX;
+	public float heldItemOffsetY;
+	public float glintIntensity = 1.0f;
+	public int glintColor = 0xFF5030FF;
+	public boolean glintEnabled = true;
+	public int fpsLimit = 260;
+
+	public enum PerformanceProfile {
+		DEFAULT,
+		BALANCED,
+		PERFORMANCE,
+		MINIMAL
+	}
+	public PerformanceProfile performanceProfile = PerformanceProfile.DEFAULT;
 
 	public PvpConfig() {
 		elements.put("fps", new HudElementConfig(true, HudElementConfig.Anchor.TOP_LEFT, 5, 5, 1.0f));
@@ -109,6 +140,7 @@ public final class PvpConfig {
 		elements.put("low_health", new HudElementConfig(false, HudElementConfig.Anchor.TOP_CENTER, 0, 20, 1.0f));
 		elements.put("food_info", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 218, 1.0f));
 		elements.put("item_count", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_RIGHT, 5, 20, 1.0f));
+		elements.put("inventory_preview", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_LEFT, 5, 65, 1.0f));
 	}
 
 	public HudElementConfig getElement(String id) {
@@ -251,6 +283,37 @@ public final class PvpConfig {
 		config.chatTimestamps = root.optBoolean("chatTimestamps", false);
 		config.chatTimestamp24Hour = root.optBoolean("chatTimestamp24Hour", true);
 		config.chatHighlightMentions = root.optBoolean("chatHighlightMentions", false);
+		config.chatCompact = root.optBoolean("chatCompact", false);
+		config.chatBackgroundColor = root.optInt("chatBackgroundColor", 0xFF000000);
+		config.streamerMode = root.optBoolean("streamerMode", false);
+		config.hideUsername = root.optBoolean("hideUsername", false);
+		config.screenshotMode = root.optBoolean("screenshotMode", false);
+		config.notificationsEnabled = root.optBoolean("notificationsEnabled", true);
+		config.thirdPersonDistance = clampFloat(root.optDouble("thirdPersonDistance", 4.0d), 2.0f, 12.0f, 4.0f);
+		config.zoomSmoothness = Math.max(0, Math.min(100, root.optInt("zoomSmoothness", 60)));
+		config.clearWater = root.optBoolean("clearWater", false);
+		config.customFogColorEnabled = root.optBoolean("customFogColorEnabled", false);
+		config.customFogColor = root.optInt("customFogColor", 0xFFB6C8D8);
+		config.localTimeEnabled = root.optBoolean("localTimeEnabled", false);
+		config.localTime = Math.max(0, Math.min(24000, root.optInt("localTime", 12000)));
+		config.blockOutlineEnabled = root.optBoolean("blockOutlineEnabled", true);
+		config.blockOutlineColor = root.optInt("blockOutlineColor", 0xFF000000);
+		config.blockOutlineThickness = Math.max(1, Math.min(8, root.optInt("blockOutlineThickness", 2)));
+		config.heldItemScale = clampFloat(root.optDouble("heldItemScale", 1.0d), 0.5f, 2.0f, 1.0f);
+		config.heldItemOffsetX = clampFloat(root.optDouble("heldItemOffsetX", 0.0d), -1.0f, 1.0f, 0.0f);
+		config.heldItemOffsetY = clampFloat(root.optDouble("heldItemOffsetY", 0.0d), -1.0f, 1.0f, 0.0f);
+		config.glintIntensity = clampFloat(root.optDouble("glintIntensity", 1.0d), 0.0f, 2.0f, 1.0f);
+		config.glintColor = root.optInt("glintColor", 0xFF5030FF);
+		config.glintEnabled = root.optBoolean("glintEnabled", true);
+		config.fpsLimit = root.optInt("fpsLimit", 260);
+		if(config.fpsLimit < 30) config.fpsLimit = 30;
+		if(config.fpsLimit > 260) config.fpsLimit = 260;
+		String performanceProfile = root.optString("performanceProfile", PerformanceProfile.DEFAULT.name());
+		try {
+			config.performanceProfile = PerformanceProfile.valueOf(performanceProfile);
+		}catch(RuntimeException ex) {
+			config.performanceProfile = PerformanceProfile.DEFAULT;
+		}
 		config.activeHudProfile = root.optString("activeHudProfile", "");
 		JSONObject profiles = root.optJSONObject("hudProfiles");
 		if(profiles != null) {
@@ -331,6 +394,81 @@ public final class PvpConfig {
 		return new ArrayList<>(hudProfiles.keySet());
 	}
 
+	public void applyPerformanceProfile(PerformanceProfile profile) {
+		this.performanceProfile = profile;
+		switch(profile) {
+		case BALANCED:
+			hideWeather = false;
+			disableEntityShadows = false;
+			hideVignette = false;
+			fpsLimit = 120;
+			break;
+		case PERFORMANCE:
+			hideWeather = true;
+			disableEntityShadows = true;
+			hideVignette = true;
+			fpsLimit = 60;
+			break;
+		case MINIMAL:
+			hideWeather = true;
+			disableEntityShadows = true;
+			hideVignette = true;
+			fullbright = false;
+			fpsLimit = 30;
+			break;
+		default:
+			hideWeather = false;
+			disableEntityShadows = false;
+			hideVignette = false;
+			fullbright = false;
+			fpsLimit = 260;
+			break;
+		}
+	}
+
+	public void resetVisualCategory() {
+		noDynamicFov = false;
+		noHurtTilt = false;
+		noFog = false;
+		hideWeather = false;
+		hideVignette = false;
+		hideFireOverlay = false;
+		hidePumpkinOverlay = false;
+		hidePortalOverlay = false;
+		fullbright = false;
+		disableEntityShadows = false;
+		thirdPersonDistance = 4.0f;
+		zoomSmoothness = 60;
+		clearWater = false;
+		customFogColorEnabled = false;
+		localTimeEnabled = false;
+		blockOutlineEnabled = true;
+		blockOutlineColor = 0xFF000000;
+		blockOutlineThickness = 2;
+		heldItemScale = 1.0f;
+		heldItemOffsetX = 0.0f;
+		heldItemOffsetY = 0.0f;
+		glintEnabled = true;
+		glintIntensity = 1.0f;
+		glintColor = 0xFF5030FF;
+	}
+
+	public void resetPrivacyCategory() {
+		hideServerAddress = false;
+		hideChat = false;
+		hideUsername = false;
+		streamerMode = false;
+		screenshotMode = false;
+	}
+
+	public void resetChatCategory() {
+		chatTimestamps = false;
+		chatTimestamp24Hour = true;
+		chatHighlightMentions = false;
+		chatCompact = false;
+		chatBackgroundColor = 0xFF000000;
+	}
+
 	public static String formatCoordinates(CoordinateFormat format, int x, int y, int z) {
 		if(format == CoordinateFormat.COMMAS) {
 			return x + ", " + y + ", " + z;
@@ -403,6 +541,30 @@ public final class PvpConfig {
 		root.put("chatTimestamps", chatTimestamps);
 		root.put("chatTimestamp24Hour", chatTimestamp24Hour);
 		root.put("chatHighlightMentions", chatHighlightMentions);
+		root.put("chatCompact", chatCompact);
+		root.put("chatBackgroundColor", chatBackgroundColor);
+		root.put("streamerMode", streamerMode);
+		root.put("hideUsername", hideUsername);
+		root.put("screenshotMode", screenshotMode);
+		root.put("notificationsEnabled", notificationsEnabled);
+		root.put("thirdPersonDistance", thirdPersonDistance);
+		root.put("zoomSmoothness", zoomSmoothness);
+		root.put("clearWater", clearWater);
+		root.put("customFogColorEnabled", customFogColorEnabled);
+		root.put("customFogColor", customFogColor);
+		root.put("localTimeEnabled", localTimeEnabled);
+		root.put("localTime", localTime);
+		root.put("blockOutlineEnabled", blockOutlineEnabled);
+		root.put("blockOutlineColor", blockOutlineColor);
+		root.put("blockOutlineThickness", blockOutlineThickness);
+		root.put("heldItemScale", heldItemScale);
+		root.put("heldItemOffsetX", heldItemOffsetX);
+		root.put("heldItemOffsetY", heldItemOffsetY);
+		root.put("glintIntensity", glintIntensity);
+		root.put("glintColor", glintColor);
+		root.put("glintEnabled", glintEnabled);
+		root.put("fpsLimit", fpsLimit);
+		root.put("performanceProfile", performanceProfile.name());
 		root.put("activeHudProfile", activeHudProfile);
 		JSONObject profiles = new JSONObject();
 		for(Map.Entry<String, JSONObject> entry : hudProfiles.entrySet()) {

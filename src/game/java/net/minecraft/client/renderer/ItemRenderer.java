@@ -322,6 +322,9 @@ public class ItemRenderer {
 		this.func_178110_a((EntityPlayerSP) entityplayersp, partialTicks);
 		GlStateManager.enableRescaleNormal();
 		GlStateManager.pushMatrix();
+		GlStateManager.translate(PvpClient.getHeldItemOffsetX(), PvpClient.getHeldItemOffsetY(), 0.0F);
+		float heldItemScale = PvpClient.getHeldItemScale();
+		GlStateManager.scale(heldItemScale, heldItemScale, heldItemScale);
 		if (this.itemToRender != null) {
 			if (this.itemToRender.getItem() == Items.filled_map) {
 				this.renderItemMap(entityplayersp, f2, f, f1);

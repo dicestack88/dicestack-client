@@ -98,9 +98,15 @@ public class GuiNewChat extends Gui {
 							++j;
 							if (l1 > 3) {
 								byte b0 = 0;
-								int i2 = -i1 * 9;
+								int lineSpacing = pvpConfig != null && pvpConfig.enabled && pvpConfig.chatCompact ? 8 : 9;
+								int i2 = -i1 * lineSpacing;
 								int backgroundAlpha = l1 / 2;
-								drawRect(b0, i2 - 9, b0 + l + 4 + timestampWidth, i2, backgroundAlpha << 24);
+								int backgroundColor = pvpConfig != null && pvpConfig.enabled
+										? pvpConfig.chatBackgroundColor : 0xFF000000;
+								int backgroundRgb = backgroundColor & 0x00FFFFFF;
+								int alpha = Math.max(0, Math.min(255, backgroundAlpha));
+								drawRect(b0, i2 - lineSpacing, b0 + l + 4 + timestampWidth, i2,
+										(alpha << 24) | backgroundRgb);
 								String formattedText = chatline.getChatComponent().getFormattedText();
 								String plainText = chatline.getChatComponent().getUnformattedText();
 								boolean highlightMention = pvpConfig != null && pvpConfig.enabled
@@ -380,6 +386,9 @@ public class GuiNewChat extends Gui {
 	}
 
 	public int getLineCount() {
-		return this.getChatHeight() / 9;
+		PvpConfig pvpConfig = PvpClient.getInstance() == null ? null
+				: PvpClient.getInstance().getConfigStore().getConfig();
+		int lineHeight = pvpConfig != null && pvpConfig.enabled && pvpConfig.chatCompact ? 8 : 9;
+		return this.getChatHeight() / lineHeight;
 	}
 }

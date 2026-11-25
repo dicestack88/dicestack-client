@@ -25,7 +25,7 @@ public final class HudManager {
 			{ HudElementConfig.Anchor.BOTTOM_LEFT, HudElementConfig.Anchor.BOTTOM_CENTER,
 					HudElementConfig.Anchor.BOTTOM_RIGHT } };
 
-	private final PvpConfig config;
+	private PvpConfig config;
 	private final Minecraft minecraft;
 	private final List<HudModuleInfo> modules = new ArrayList<>();
 	private final PvpContext context;
@@ -87,6 +87,13 @@ public final class HudManager {
 				HudModuleInfo.Category.PLAYER);
 		register(new TextHud(minecraft, "item_count", TextHud.Type.ITEM_COUNT), "Held Item Counter",
 				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "inventory_preview", TextHud.Type.INVENTORY_PREVIEW),
+				"Inventory Preview", HudModuleInfo.Category.PLAYER);
+	}
+
+	public void reloadConfig(PvpConfig config) {
+		this.config = config;
+		this.context.config = config;
 	}
 
 	private void register(HudElement element, String name, HudModuleInfo.Category category) {

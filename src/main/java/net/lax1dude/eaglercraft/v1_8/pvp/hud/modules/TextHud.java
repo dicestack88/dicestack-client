@@ -17,6 +17,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.ItemFood;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 
 public final class TextHud implements HudElement {
 
@@ -45,7 +46,8 @@ public final class TextHud implements HudElement {
 		LIGHT_LEVEL,
 		LOW_HEALTH,
 		FOOD_INFO,
-		ITEM_COUNT
+		ITEM_COUNT,
+		INVENTORY_PREVIEW
 	}
 
 	private final Minecraft minecraft;
@@ -86,6 +88,7 @@ public final class TextHud implements HudElement {
 	private int cachedFoodEstimate = Integer.MIN_VALUE;
 	private int cachedFoodSaturationEstimate = Integer.MIN_VALUE;
 	private ItemStack cachedFoodStack;
+	private String cachedInventory;
 
 	public TextHud(Minecraft minecraft, String id, Type type) {
 		this.minecraft = minecraft;
@@ -257,7 +260,7 @@ public final class TextHud implements HudElement {
 			}
 			break;
 		case SERVER_ADDRESS:
-			if(context.config.hideServerAddress) {
+			if(context.config.hideServerAddress || context.config.streamerMode) {
 				if(!"Private".equals(cachedDetail)) {
 					cachedDetail = "Private";
 					setText("Server: Private");
@@ -340,7 +343,7 @@ public final class TextHud implements HudElement {
 					setText("Target: None");
 				}
 			}else {
-				String targetName = target.getName();
+				String targetName = PvpClient.getPrivateName(target.getName());
 				int targetHealth = target instanceof EntityLivingBase
 						? Math.round(((EntityLivingBase) target).getHealth() * 10.0f) : Integer.MIN_VALUE;
 				if(!targetName.equals(cachedTargetName) || targetHealth != cachedTargetHealth) {
@@ -415,6 +418,35 @@ public final class TextHud implements HudElement {
 		case ITEM_COUNT:
 			refreshItemCount();
 			break;
+		case INVENTORY_PREVIEW:
+			refreshInventoryPreview();
+			break;
+		}
+	}
+
+	private void refreshInventoryPreview() {
+		StringBuilder text = new StringBuilder("Inventory: ");
+		int shown = 0;
+		for(int i = 0; i < minecraft.thePlayer.inventory.mainInventory.length && shown < 6; ++i) {
+			ItemStack item = minecraft.thePlayer.inventory.mainInventory[i];
+			if(item == null) {
+				continue;
+			}
+			if(shown++ > 0) {
+				text.append(", ");
+			}
+			text.append(item.getDisplayName());
+			if(item.stackSize > 1) {
+				text.append(" x").append(item.stackSize);
+			}
+		}
+		if(shown == 0) {
+			text.append("Empty");
+		}
+		String inventory = text.toString();
+		if(!inventory.equals(cachedInventory)) {
+			cachedInventory = inventory;
+			setText(inventory);
 		}
 	}
 

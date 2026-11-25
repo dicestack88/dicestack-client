@@ -13,11 +13,12 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59 },
-			{ 30, 31, 32, 33, 34, 35, 38 },
+			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69 },
+			{ 30, 31, 32, 33, 34, 35, 38, 70, 71, 72, 93, 94, 95, 96, 100 },
 			{ 40, 41, 42, 43, 44, 45, 46, 47 },
 			{ 50, 51, 52, 53, 54, 55, 56, 57 },
-			{ 60, 61, 62, 63, 64 }
+			{ 60, 61, 62, 63, 64, 78, 101 },
+			{ 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 97, 98, 99 }
 	};
 	private static final int[][] CROSSHAIR_COLORS = {
 			{ 255, 255, 255 }, { 83, 214, 163 }, { 255, 85, 85 }, { 255, 209, 102 }, { 112, 167, 255 }
@@ -150,6 +151,64 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 62: config.chatHighlightMentions = !config.chatHighlightMentions; break;
 		case 63: mc.gameSettings.chatOpacity = Math.max(0.0f, mc.gameSettings.chatOpacity - 0.1f); mc.gameSettings.saveOptions(); break;
 		case 64: mc.gameSettings.chatOpacity = Math.min(1.0f, mc.gameSettings.chatOpacity + 0.1f); mc.gameSettings.saveOptions(); break;
+		case 65: config.thirdPersonDistance = Math.max(2.0f, config.thirdPersonDistance - 0.5f); break;
+		case 66: config.thirdPersonDistance = Math.min(12.0f, config.thirdPersonDistance + 0.5f); break;
+		case 67: config.zoomSmoothness=Math.max(0,config.zoomSmoothness-10);break;
+		case 68: config.zoomSmoothness=Math.min(100,config.zoomSmoothness+10);break;
+		case 69: config.localTime=Math.max(0,config.localTime-1000);break;
+		case 93: config.localTime=Math.min(24000,config.localTime+1000);break;
+		case 70: config.clearWater = !config.clearWater; break;
+		case 71: config.customFogColorEnabled = !config.customFogColorEnabled; break;
+		case 72: config.localTimeEnabled = !config.localTimeEnabled; break;
+		case 73: config.streamerMode = !config.streamerMode; break;
+		case 74: config.hideUsername = !config.hideUsername; break;
+		case 75: config.notificationsEnabled = !config.notificationsEnabled; break;
+		case 76: config.screenshotMode = !config.screenshotMode; break;
+		case 78: config.chatCompact = !config.chatCompact; break;
+		case 101:
+			config.chatBackgroundColor=config.chatBackgroundColor==0xFF000000?0xFF172638:
+				config.chatBackgroundColor==0xFF172638?0xFF26384B:0xFF000000;
+			break;
+		case 79:
+			int[] fpsLimits = {30,60,120,144,260};
+			int index=0;
+			for(int i=0;i<fpsLimits.length;++i) if(config.fpsLimit==fpsLimits[i]) {index=i;break;}
+			config.fpsLimit=fpsLimits[(index+1)%fpsLimits.length];
+			mc.gameSettings.limitFramerate=config.fpsLimit;
+			mc.gameSettings.saveOptions();
+			break;
+		case 80:
+			PvpConfig.PerformanceProfile profile=config.performanceProfile;
+			int nextProfile=(profile.ordinal()+1)%PvpConfig.PerformanceProfile.values().length;
+			config.applyPerformanceProfile(PvpConfig.PerformanceProfile.values()[nextProfile]);
+			mc.gameSettings.limitFramerate=config.fpsLimit;
+			mc.gameSettings.saveOptions();
+			break;
+		case 81: pvpClient.exportConfig(); return;
+		case 82: pvpClient.importConfigFromClipboard(); break;
+		case 83: config.resetVisualCategory(); break;
+		case 84: config.resetPrivacyCategory(); break;
+		case 85: config.resetChatCategory(); break;
+		case 86: config.heldItemScale=Math.max(0.5f,config.heldItemScale-0.1f);break;
+		case 87: config.heldItemScale=Math.min(2.0f,config.heldItemScale+0.1f);break;
+		case 88: config.heldItemOffsetX=Math.max(-1.0f,config.heldItemOffsetX-0.05f);break;
+		case 89: config.heldItemOffsetX=Math.min(1.0f,config.heldItemOffsetX+0.05f);break;
+		case 90: config.heldItemOffsetY=Math.max(-1.0f,config.heldItemOffsetY-0.05f);break;
+		case 91: config.heldItemOffsetY=Math.min(1.0f,config.heldItemOffsetY+0.05f);break;
+		case 92: config.glintEnabled=!config.glintEnabled;break;
+		case 94: config.blockOutlineEnabled=!config.blockOutlineEnabled;break;
+		case 95: config.blockOutlineThickness=Math.max(1,config.blockOutlineThickness-1);break;
+		case 96: config.blockOutlineThickness=Math.min(8,config.blockOutlineThickness+1);break;
+		case 97: config.glintIntensity=Math.max(0.0f,config.glintIntensity-0.1f);break;
+		case 98: config.glintIntensity=Math.min(2.0f,config.glintIntensity+0.1f);break;
+		case 99:
+			config.glintColor=config.glintColor==0xFF5030FF?0xFF55DDA0:
+				config.glintColor==0xFF55DDA0?0xFFFF5555:0xFF5030FF;
+			break;
+		case 100:
+			config.customFogColor=config.customFogColor==0xFFB6C8D8?0xFFB8A8D8:
+				config.customFogColor==0xFFB8A8D8?0xFFD8B6A8:0xFFB6C8D8;
+			break;
 		case 30: config.hideFireOverlay = !config.hideFireOverlay; break;
 		case 31: config.hidePumpkinOverlay = !config.hidePumpkinOverlay; break;
 		case 32: config.hidePortalOverlay = !config.hidePortalOverlay; break;
@@ -265,6 +324,42 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 62: return "Highlight Own Name: " + on(c.chatHighlightMentions);
 		case 63: return "Chat Opacity - " + Math.round(mc.gameSettings.chatOpacity * 100.0f) + "%";
 		case 64: return "Chat Opacity + " + Math.round(mc.gameSettings.chatOpacity * 100.0f) + "%";
+		case 65: return "Third Person Distance -";
+		case 66: return "Third Person Distance +";
+		case 67: return "Zoom Smoothness -";
+		case 68: return "Zoom Smoothness: " + c.zoomSmoothness + "%";
+		case 69: return "Local Time -";
+		case 93: return "Local Time " + c.localTime + " +";
+		case 70: return "Clear Water: " + on(c.clearWater);
+		case 71: return "Custom Fog Colour: " + on(c.customFogColorEnabled);
+		case 72: return "Local Time Override: " + on(c.localTimeEnabled);
+		case 73: return "Streamer Mode: " + on(c.streamerMode);
+		case 74: return "Hide Username: " + on(c.hideUsername);
+		case 75: return "Notifications: " + on(c.notificationsEnabled);
+		case 76: return "Screenshot Mode: " + on(c.screenshotMode);
+		case 78: return "Compact Chat: " + on(c.chatCompact);
+		case 101: return "Chat Background";
+		case 79: return "FPS Limit: " + c.fpsLimit;
+		case 80: return "Performance: " + c.performanceProfile.name();
+		case 81: return "Export Configuration";
+		case 82: return "Import from Clipboard";
+		case 83: return "Reset Visual Category";
+		case 84: return "Reset Privacy Category";
+		case 85: return "Reset Chat Category";
+		case 86: return "Held Item Size -";
+		case 87: return "Held Item Size +";
+		case 88: return "Held Item X -";
+		case 89: return "Held Item X +";
+		case 90: return "Held Item Y -";
+		case 91: return "Held Item Y +";
+		case 92: return "Enchantment Glint: " + on(c.glintEnabled);
+		case 94: return "Block Outline: " + on(c.blockOutlineEnabled);
+		case 95: return "Outline Thickness -";
+		case 96: return "Outline Thickness " + c.blockOutlineThickness + " +";
+		case 97: return "Glint Intensity -";
+		case 98: return "Glint Intensity " + Math.round(c.glintIntensity*100.0f)+"%";
+		case 99: return "Glint Colour";
+		case 100: return "Fog Colour";
 		case 30: return "Hide Fire Overlay: " + on(c.hideFireOverlay);
 		case 31: return "Hide Pumpkin Overlay: " + on(c.hidePumpkinOverlay);
 		case 32: return "Hide Portal Overlay: " + on(c.hidePortalOverlay);
@@ -303,6 +398,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 3: return "CROSSHAIR";
 		case 4: return "CROSSHAIR & WARNINGS";
 		case 5: return "CHAT DISPLAY";
+		case 6: return "PERFORMANCE & DATA";
 		default: return "QUALITY OF LIFE";
 		}
 	}

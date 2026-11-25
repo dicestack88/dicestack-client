@@ -252,6 +252,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		this.updateTorchFlicker();
 		this.fogColor2 = this.fogColor1;
 		this.thirdPersonDistanceTemp = this.thirdPersonDistance;
+		this.thirdPersonDistance = PvpClient.getThirdPersonDistance(this.thirdPersonDistance);
 		if (this.mc.gameSettings.smoothCamera) {
 			float f = this.mc.gameSettings.mouseSensitivity * 0.6F + 0.2F;
 			float f1 = f * f * f * 8.0F;
@@ -1690,7 +1691,8 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		this.fogColorBlue = (float) vec31.zCoord;
 		if (this.mc.gameSettings.renderDistanceChunks >= 4) {
 			double d0 = -1.0D;
-			Vec3 vec32 = MathHelper.sin(worldclient.getCelestialAngleRadians(partialTicks)) > 0.0F
+			Vec3 vec32 = MathHelper.sin(PvpClient.getLocalTimeCelestialAngleRadians(
+					worldclient.getCelestialAngleRadians(partialTicks))) > 0.0F
 					? new Vec3(d0, 0.0D, 0.0D)
 					: new Vec3(1.0D, 0.0D, 0.0D);
 			float f5 = (float) entity.getLook(partialTicks).dotProduct(vec32);
@@ -1700,7 +1702,8 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 
 			if (f5 > 0.0F) {
 				float[] afloat = worldclient.provider
-						.calcSunriseSunsetColors(worldclient.getCelestialAngle(partialTicks), partialTicks);
+						.calcSunriseSunsetColors(PvpClient.getLocalTimeCelestialAngle(
+								worldclient.getCelestialAngle(partialTicks)), partialTicks);
 				if (afloat != null) {
 					f5 = f5 * afloat[3];
 					this.fogColorRed = this.fogColorRed * (1.0F - f5) + afloat[0] * f5;
@@ -1811,6 +1814,13 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			this.fogColorBlue = f7;
 		}
 
+		if(PvpClient.isCustomFogColorEnabled()) {
+			int fogColor = PvpClient.getCustomFogColor();
+			this.fogColorRed = ((fogColor >> 16) & 255) / 255.0f;
+			this.fogColorGreen = ((fogColor >> 8) & 255) / 255.0f;
+			this.fogColorBlue = (fogColor & 255) / 255.0f;
+		}
+
 		GlStateManager.clearColor(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F);
 	}
 
@@ -1856,7 +1866,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			GlStateManager.setFogDensity(0.1F);
 		} else if (block.getMaterial() == Material.water) {
 			GlStateManager.setFog(GL_EXP);
-			if (entity instanceof EntityLivingBase
+			if (PvpClient.isClearWaterEnabled()) {
+				GlStateManager.setFogDensity(0.001F);
+			}else if (entity instanceof EntityLivingBase
 					&& ((EntityLivingBase) entity).isPotionActive(Potion.waterBreathing)) {
 				GlStateManager.setFogDensity(0.01F);
 			} else {
@@ -2051,7 +2063,8 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		GlStateManager.pushMatrix();
 		GlStateManager.loadIdentity();
 		GlStateManager.rotate(-90.0F, 0.0F, 1.0F, 0.0F);
-		float celestialAngle = mc.theWorld.getCelestialAngle(partialTicks) * 360.0F;
+		float celestialAngle = PvpClient.getLocalTimeCelestialAngle(
+				mc.theWorld.getCelestialAngle(partialTicks)) * 360.0F;
 		GlStateManager.rotate(DeferredStateManager.sunAngle, 0.0F, 1.0F, 0.0F);
 
 		if (mc.theWorld.provider.getDimensionId() == 0) {
