@@ -13,12 +13,12 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
-			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69, 102 },
+			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69, 102, 104 },
 			{ 30, 31, 32, 33, 34, 35, 38, 70, 71, 72, 93, 94, 95, 96, 100 },
 			{ 40, 41, 42, 43, 44, 45, 46, 47 },
 			{ 50, 51, 52, 53, 54, 55, 56, 57 },
 			{ 60, 61, 62, 63, 64, 78, 101 },
-			{ 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 97, 98, 99 }
+			{ 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 97, 98, 99, 103 }
 	};
 	private static final int[][] CROSSHAIR_COLORS = {
 			{ 255, 255, 255 }, { 83, 214, 163 }, { 255, 85, 85 }, { 255, 209, 102 }, { 112, 167, 255 }
@@ -79,9 +79,13 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xE8121E2A);
+		drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight,
+				0xEE172638, 0xE80F1722);
+		drawRect(panelX, panelY, panelX + panelWidth, panelY + 1, 0xFF53D6A3);
 		drawRect(panelX, panelY, panelX + panelWidth, panelY + 2, 0xFF53D6A3);
 		drawRect(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, 0xAA53D6A3);
+		drawRect(panelX, panelY, panelX + 1, panelY + panelHeight, 0xAA53D6A3);
+		drawRect(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, 0xAA53D6A3);
 		drawCenteredString(fontRendererObj, "DICESTACK  /  " + pageTitle(), width / 2, panelY + 9, 0xFFF1F7F5);
 		if(searchField.getText().isEmpty()) {
 			fontRendererObj.drawStringWithShadow("Search all settings...", searchField.xPosition + 4,
@@ -139,6 +143,8 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 28: mc.gameSettings.smoothCamera = !mc.gameSettings.smoothCamera; mc.gameSettings.saveOptions(); break;
 		case 29: config.customFovEnabled = !config.customFovEnabled; break;
 		case 102: config.freelookEnabled = !config.freelookEnabled; break;
+		case 103: config.vanillaFoodOverlayEnabled = !config.vanillaFoodOverlayEnabled; break;
+		case 104: config.freelookToggleMode = !config.freelookToggleMode; break;
 		case 58: config.customFov = Math.max(30.0f, config.customFov - 5.0f); break;
 		case 59: config.customFov = Math.min(110.0f, config.customFov + 5.0f); break;
 		case 60:
@@ -319,6 +325,8 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		case 28: return "Smooth Camera: " + on(mc.gameSettings.smoothCamera);
 		case 29: return "Custom FOV: " + on(c.customFovEnabled);
 		case 102: return "Third-Person Freelook: " + on(c.freelookEnabled);
+		case 103: return "Vanilla Food Overlay: " + on(c.vanillaFoodOverlayEnabled);
+		case 104: return "Freelook Mode: " + (c.freelookToggleMode ? "Toggle" : "Hold");
 		case 58: return "Custom FOV " + Math.round(c.customFov) + " -";
 		case 59: return "Custom FOV " + Math.round(c.customFov) + " +";
 		case 60: return "Chat Timestamps: " + on(c.chatTimestamps);

@@ -14,10 +14,11 @@ import net.minecraft.client.gui.ScaledResolution;
 public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private static final int TOOLBAR_BUTTONS = 7;
-	private static final int POPUP_BUTTONS = 15;
+	private static final int POPUP_BUTTONS = 24;
 	private static final int[] TOOLBAR_IDS = { 1, 2, 20, 3, 4, 5, 6 };
 	private static final String[] TOOLBAR_LABELS = { "Hide", "-", "", "+", "Reset", "All", "Done" };
-	private static final int[] POPUP_IDS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25 };
+	private static final int[] POPUP_IDS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25,
+			26, 27, 28, 29, 30, 31, 32, 33, 34 };
 	private static final int[] COLORS = { 0xFFF1F7F5, 0xFF53D6A3, 0xFF55DDA0, 0xFFFFD166, 0xFF70A7FF,
 			0xFFFF7777, 0xFFFFFFFF, 0xFF111820, 0xFF172638, 0xFF0F1722, 0xFF8BA0B5 };
 
@@ -72,9 +73,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		drawSnapGuides();
 		drawElementBounds(hudManager);
 		layoutControls();
-		drawToolbar();
+		drawToolbar(mouseX, mouseY);
 		if(selectedElement != null) {
-			drawAppearancePopup();
+			drawAppearancePopup(mouseX, mouseY);
+			drawSelectedModuleLabel();
 		}
 		fontRendererObj.drawStringWithShadow(instructionText, 7, height - 14, 0xFFDDDDDD);
 	}
@@ -149,7 +151,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		}
 	}
 
-	private void drawToolbar() {
+	private void drawToolbar(int mouseX, int mouseY) {
 		drawPanel(toolbarPanelX, toolbarPanelY, toolbarPanelWidth, toolbarPanelHeight);
 		HudElementConfig elementConfig = selectedElement == null ? null
 				: pvpClient.getHudManager().getElementConfig(selectedElement);
@@ -161,34 +163,64 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 				label = "Show";
 			}
 			drawControl(toolbarX[i], toolbarY[i], toolbarWidth[i], toolbarHeight[i], label,
-					TOOLBAR_IDS[i] == 1 && elementConfig != null && elementConfig.enabled);
+					TOOLBAR_IDS[i] == 1 && elementConfig != null && elementConfig.enabled,
+					contains(toolbarX[i], toolbarY[i], toolbarWidth[i], toolbarHeight[i], mouseX, mouseY));
 		}
 	}
 
-	private void drawAppearancePopup() {
+	private void drawAppearancePopup(int mouseX, int mouseY) {
 		drawPanel(popupPanelX, popupPanelY, popupPanelWidth, popupPanelHeight);
 		for(int i = 0; i < POPUP_BUTTONS; ++i) {
 			drawControl(popupXByButton[i], popupYByButton[i], popupWidthByButton[i], popupHeightByButton[i],
-					popupLabels[i], isPopupControlActive(POPUP_IDS[i]));
+					popupLabels[i], isPopupControlActive(POPUP_IDS[i]),
+					contains(popupXByButton[i], popupYByButton[i], popupWidthByButton[i],
+							popupHeightByButton[i], mouseX, mouseY));
 		}
 	}
 
 	private void drawPanel(int x, int y, int panelWidth, int panelHeight) {
-		Gui.drawRect(x, y, x + panelWidth, y + panelHeight, 0xE8121E2A);
-		Gui.drawRect(x, y, x + panelWidth, y + 1, 0xFF53D6A3);
-		Gui.drawRect(x, y + panelHeight - 1, x + panelWidth, y + panelHeight, 0xAA53D6A3);
-		Gui.drawRect(x, y, x + 1, y + panelHeight, 0xAA53D6A3);
-		Gui.drawRect(x + panelWidth - 1, y, x + panelWidth, y + panelHeight, 0xAA53D6A3);
+		HudAppearanceConfig style = selectedElement == null ? pvpClient.getConfigStore().getConfig().appearance
+				: getAppearance(pvpClient.getHudManager().getElementConfig(selectedElement));
+		int start = HudRenderer.withAlpha(style.gradientStart, style.backgroundOpacity);
+		int end = style.gradientEnabled ? HudRenderer.withAlpha(style.gradientEnd, style.backgroundOpacity) : start;
+		if(style.preset == HudAppearanceConfig.Preset.MODERN_GLASS && style.gradientEnabled) {
+			drawGradientRect(x, y, x + panelWidth, y + panelHeight, start, end);
+		}else {
+			Gui.drawRect(x, y, x + panelWidth, y + panelHeight, start);
+		}
+		int border = HudRenderer.withAlpha(style.borderColor, style.borderOpacity);
+		Gui.drawRect(x, y, x + panelWidth, y + Math.max(1, style.borderThickness), border);
+		Gui.drawRect(x, y + panelHeight - 1, x + panelWidth, y + panelHeight, border);
+		Gui.drawRect(x, y, x + 1, y + panelHeight, border);
+		Gui.drawRect(x + panelWidth - 1, y, x + panelWidth, y + panelHeight, border);
 	}
 
-	private void drawControl(int x, int y, int controlWidth, int controlHeight, String label, boolean active) {
-		int background = active ? 0xFF294538 : 0xCC202D3A;
+	private void drawControl(int x, int y, int controlWidth, int controlHeight, String label,
+			boolean active, boolean hovered) {
+		int background = active ? 0xFF294538 : hovered ? 0xE12B3B4B : 0xCC202D3A;
 		Gui.drawRect(x, y, x + controlWidth, y + controlHeight, background);
-		Gui.drawRect(x, y, x + controlWidth, y + 1, active ? 0xFF53D6A3 : 0xFF526477);
+		Gui.drawRect(x, y, x + controlWidth, y + 1,
+				active || hovered ? 0xFF53D6A3 : 0xFF526477);
 		int textWidth = fontRendererObj.getStringWidth(label);
-		int textX = x + Math.max(1, (controlWidth - textWidth) / 2);
+		int textX = x + Math.max(1, Math.min(controlWidth - textWidth - 1, (controlWidth - textWidth) / 2));
 		int textY = y + Math.max(0, (controlHeight - 8) / 2);
-		fontRendererObj.drawString(label, textX, textY, 0xFFF1F7F5);
+		fontRendererObj.drawString(label, textX, textY, active || hovered ? 0xFFFFFFFF : 0xFFD8E1EA);
+	}
+
+	private void drawSelectedModuleLabel() {
+		String name = selectedElement.getId();
+		HudManager manager = pvpClient.getHudManager();
+		for(int i = 0; i < manager.getElementCount(); ++i) {
+			if(manager.getElement(i) == selectedElement) {
+				name = manager.getModuleInfo(i).name;
+				break;
+			}
+		}
+		HudElementConfig config = manager.getElementConfig(selectedElement);
+		String label = name + "  |  " + config.anchor.name().replace('_', ' ')
+				+ "  |  drag to position";
+		fontRendererObj.drawStringWithShadow(label, Math.max(4, width / 2 - fontRendererObj.getStringWidth(label) / 2),
+				Math.max(3, toolbarPanelY - 11), 0xFFF1F7F5);
 	}
 
 	private void drawElementBounds(HudManager hudManager) {
@@ -240,6 +272,15 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 				: "GRAD V";
 		popupLabels[14] = style.textAlignment == HudAppearanceConfig.TextAlignment.LEFT ? "ALIGN L"
 				: style.textAlignment == HudAppearanceConfig.TextAlignment.CENTER ? "ALIGN C" : "ALIGN R";
+		popupLabels[15] = "FPS HI";
+		popupLabels[16] = "FPS MID";
+		popupLabels[17] = "FPS LOW";
+		popupLabels[18] = style.animationsEnabled ? "ANIM ON" : "ANIM OFF";
+		popupLabels[19] = "ANCHOR";
+		popupLabels[20] = "X -";
+		popupLabels[21] = "X +";
+		popupLabels[22] = "Y -";
+		popupLabels[23] = "Y +";
 	}
 
 	private boolean overlaps(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
@@ -254,6 +295,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		case 12: return style.backgroundEnabled;
 		case 14: return style.gradientEnabled;
 		case 18: return style.borderEnabled;
+		case 29: return style.animationsEnabled;
 		default: return false;
 		}
 	}
@@ -409,6 +451,34 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 					: style.textAlignment == HudAppearanceConfig.TextAlignment.CENTER
 							? HudAppearanceConfig.TextAlignment.RIGHT
 							: HudAppearanceConfig.TextAlignment.LEFT;
+			break;
+		case 26:
+			style.performanceGoodColor = nextColor(style.performanceGoodColor);
+			break;
+		case 27:
+			style.performanceMediumColor = nextColor(style.performanceMediumColor);
+			break;
+		case 28:
+			style.performanceLowColor = nextColor(style.performanceLowColor);
+			break;
+		case 29:
+			style.animationsEnabled = !style.animationsEnabled;
+			break;
+		case 30:
+			element.anchor = HudElementConfig.Anchor.values()[(element.anchor.ordinal() + 1)
+					% HudElementConfig.Anchor.values().length];
+			break;
+		case 31:
+			element.offsetX += anchorColumn(element.anchor) == 2 ? 2 : -2;
+			break;
+		case 32:
+			element.offsetX += anchorColumn(element.anchor) == 2 ? -2 : 2;
+			break;
+		case 33:
+			element.offsetY += anchorRow(element.anchor) == 2 ? 2 : -2;
+			break;
+		case 34:
+			element.offsetY += anchorRow(element.anchor) == 2 ? -2 : 2;
 			break;
 		}
 		updateControlLabels();

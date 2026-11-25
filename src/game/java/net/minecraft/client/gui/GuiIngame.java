@@ -772,6 +772,11 @@ public class GuiIngame extends Gui {
 					}
 				}
 			}
+			if (entity == null) {
+				PvpClient.renderVanillaFoodOverlay(entityplayer, k, j1, k1);
+				GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+				this.mc.getTextureManager().bindTexture(icons);
+			}
 
 		}
 	}

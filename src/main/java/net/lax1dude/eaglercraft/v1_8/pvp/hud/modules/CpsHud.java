@@ -14,8 +14,11 @@ public final class CpsHud implements HudElement {
 	private final Minecraft minecraft;
 	private int cachedLeftCps = -1;
 	private int cachedRightCps = -1;
-	private String cachedText = "";
-	private int cachedWidth;
+	private String cachedLeftValue = "0";
+	private String cachedRightValue = "0";
+	private String cachedCombinedValue = "0";
+	private String cachedPeakValue = "0";
+	private int cachedPeak = -1;
 	private int peakLeft;
 	private int peakRight;
 	private long peakResetAt;
@@ -34,17 +37,14 @@ public final class CpsHud implements HudElement {
 		refresh(context);
 		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
 		HudElementConfig config = context.config.getElement(getId());
-		int enabled = (config.cpsLeft ? 1 : 0) + (config.cpsRight ? 1 : 0) + (config.cpsCombined ? 1 : 0);
-		if(enabled == 0) {
-			enabled = 1;
-		}
-		return Math.max(cachedWidth, enabled * 42) + style.padding * 2;
+		int enabled = getEnabledCellCount(config);
+		return enabled * 38 + (config.cpsPeak ? 38 : 0) + style.padding * 2;
 	}
 
 	@Override
 	public int getHeight(PvpContext context) {
 		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
-		return 9 + style.padding * 2;
+		return (context.config.getElement(getId()).cpsPeak ? 30 : 20) + style.padding * 2;
 	}
 
 	@Override
@@ -53,27 +53,39 @@ public final class CpsHud implements HudElement {
 		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
 		HudElementConfig config = context.config.getElement(getId());
 		HudRenderer.drawPanel(context, getId(), x, y, getWidth(context), getHeight(context));
-		StringBuilder text = new StringBuilder();
-		boolean first = true;
+		int cell = 0;
+		int cellX = x + style.padding + 2;
 		if(config.cpsLeft) {
-			appendCpsPart(text, first, config.cpsLabels ? "L " : "", cachedLeftCps);
-			first = false;
+			drawCell(context, style, cellX + cell++ * 38, y + style.padding,
+					config.cpsLabels ? "LEFT" : "L", cachedLeftValue, 0xFFFF7777);
 		}
 		if(config.cpsRight) {
-			appendCpsPart(text, first, config.cpsLabels ? "R " : "", cachedRightCps);
-			first = false;
+			drawCell(context, style, cellX + cell++ * 38, y + style.padding,
+					config.cpsLabels ? "RIGHT" : "R", cachedRightValue, 0xFF70A7FF);
 		}
 		if(config.cpsCombined) {
-			appendCpsPart(text, first, config.cpsLabels ? "C " : "", cachedLeftCps + cachedRightCps);
+			drawCell(context, style, cellX + cell++ * 38, y + style.padding,
+					config.cpsLabels ? "TOTAL" : "C", cachedCombinedValue, style.accentColor);
 		}
 		if(config.cpsPeak) {
-			text.append(config.cpsLabels ? "  Peak " : "  ").append(Math.max(peakLeft, peakRight));
+			drawCell(context, style, cellX + cell * 38, y + style.padding,
+					"PEAK", cachedPeakValue, 0xFFFFD166);
 		}
-		if(text.length() == 0) {
-			text.append("CPS ").append(cachedLeftCps);
+		if(!config.cpsLeft && !config.cpsRight && !config.cpsCombined && !config.cpsPeak) {
+			drawCell(context, style, cellX, y + style.padding, "CPS", cachedLeftValue, style.accentColor);
 		}
-		HudRenderer.drawText(context, getId(), minecraft, text.toString(), x + style.padding, y + style.padding,
-				Math.max(1, getWidth(context) - style.padding * 2));
+	}
+
+	private int getEnabledCellCount(HudElementConfig config) {
+		int enabled = (config.cpsLeft ? 1 : 0) + (config.cpsRight ? 1 : 0) + (config.cpsCombined ? 1 : 0);
+		return enabled == 0 ? 1 : enabled;
+	}
+
+	private void drawCell(PvpContext context, HudAppearanceConfig style, int x, int y,
+			String label, String value, int color) {
+		HudRenderer.drawStatusIndicator(x, y + 1, color, true);
+		HudRenderer.drawLabel(context, getId(), minecraft, label, x + 8, y);
+		HudRenderer.drawTextColor(context, getId(), minecraft, value, x + 8, y + 9, 28, color);
 	}
 
 	private void refresh(PvpContext context) {
@@ -92,18 +104,17 @@ public final class CpsHud implements HudElement {
 		if(leftCps != cachedLeftCps || rightCps != cachedRightCps) {
 			cachedLeftCps = leftCps;
 			cachedRightCps = rightCps;
-			cachedText = "CPS: L " + leftCps + " R " + rightCps;
-			cachedWidth = minecraft.fontRendererObj.getStringWidth(cachedText) + 4;
+			cachedLeftValue = Integer.toString(leftCps);
+			cachedRightValue = Integer.toString(rightCps);
+			cachedCombinedValue = Integer.toString(leftCps + rightCps);
 		}
 		if(leftCps > peakLeft) peakLeft = leftCps;
 		if(rightCps > peakRight) peakRight = rightCps;
-	}
-
-	private void appendCpsPart(StringBuilder text, boolean first, String label, int value) {
-		if(!first) {
-			text.append("  ");
+		int peak = Math.max(peakLeft, peakRight);
+		if(peak != cachedPeak) {
+			cachedPeak = peak;
+			cachedPeakValue = Integer.toString(peak);
 		}
-		text.append(label).append(value);
 	}
 
 }

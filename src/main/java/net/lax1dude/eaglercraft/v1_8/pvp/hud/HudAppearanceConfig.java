@@ -43,6 +43,10 @@ public final class HudAppearanceConfig {
 	public float textScale = 1.0f;
 	public TextAlignment textAlignment = TextAlignment.LEFT;
 	public boolean rainbowEnabled = false;
+	public boolean animationsEnabled = true;
+	public int performanceGoodColor = 0xFF53D6A3;
+	public int performanceMediumColor = 0xFFFFD166;
+	public int performanceLowColor = 0xFFFF7777;
 
 	public void applyPreset(Preset preset) {
 		this.preset = preset;
@@ -64,6 +68,7 @@ public final class HudAppearanceConfig {
 			padding = 2;
 			spacing = 2;
 			cornerRadius = 0;
+			animationsEnabled = false;
 		}else {
 			backgroundEnabled = true;
 			gradientEnabled = true;
@@ -83,6 +88,7 @@ public final class HudAppearanceConfig {
 			padding = 4;
 			spacing = 4;
 			cornerRadius = 3;
+			animationsEnabled = true;
 		}
 	}
 
@@ -132,6 +138,10 @@ public final class HudAppearanceConfig {
 			result.textAlignment = defaults.textAlignment;
 		}
 		result.rainbowEnabled = json.optBoolean("rainbowEnabled", defaults.rainbowEnabled);
+		result.animationsEnabled = json.optBoolean("animationsEnabled", defaults.animationsEnabled);
+		result.performanceGoodColor = json.optInt("performanceGoodColor", defaults.performanceGoodColor);
+		result.performanceMediumColor = json.optInt("performanceMediumColor", defaults.performanceMediumColor);
+		result.performanceLowColor = json.optInt("performanceLowColor", defaults.performanceLowColor);
 		return result;
 	}
 
@@ -160,6 +170,10 @@ public final class HudAppearanceConfig {
 		json.put("textScale", textScale);
 		json.put("textAlignment", textAlignment.name());
 		json.put("rainbowEnabled", rainbowEnabled);
+		json.put("animationsEnabled", animationsEnabled);
+		json.put("performanceGoodColor", performanceGoodColor);
+		json.put("performanceMediumColor", performanceMediumColor);
+		json.put("performanceLowColor", performanceLowColor);
 		return json;
 	}
 
@@ -196,6 +210,10 @@ public final class HudAppearanceConfig {
 		textScale = source.textScale;
 		textAlignment = source.textAlignment;
 		rainbowEnabled = source.rainbowEnabled;
+		animationsEnabled = source.animationsEnabled;
+		performanceGoodColor = source.performanceGoodColor;
+		performanceMediumColor = source.performanceMediumColor;
+		performanceLowColor = source.performanceLowColor;
 	}
 
 	private static int clampColor(int color) {
