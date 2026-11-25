@@ -7,6 +7,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.world.biome.BiomeGenBase;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class TextHud implements HudElement {
 
@@ -53,19 +55,24 @@ public final class TextHud implements HudElement {
 	@Override
 	public int getWidth(PvpContext context) {
 		refresh(context);
-		return cachedWidth;
+		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
+		return cachedWidth + style.padding * 2 - 4;
 	}
 
 	@Override
 	public int getHeight(PvpContext context) {
 		refresh(context);
-		return 11;
+		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
+		return 9 + style.padding * 2;
 	}
 
 	@Override
 	public void render(PvpContext context, int x, int y) {
 		refresh(context);
-		minecraft.fontRendererObj.drawStringWithShadow(cachedText, x + 2, y + 2, 0xFFFFFFFF);
+		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
+		HudRenderer.drawPanel(context, getId(), x, y, getWidth(context), getHeight(context));
+		HudRenderer.drawText(context, getId(), minecraft, cachedText, x + style.padding, y + style.padding,
+				Math.max(1, getWidth(context) - style.padding * 2));
 	}
 
 	private void refresh(PvpContext context) {
