@@ -285,6 +285,12 @@ public final class HudManager {
 			element.render(context, 0, 0);
 		}finally {
 			GlStateManager.popMatrix();
+			GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+			GlStateManager.enableTexture2D();
+			GlStateManager.enableAlpha();
+			GlStateManager.disableBlend();
+			GlStateManager.enableDepth();
+			GlStateManager.disableLighting();
 		}
 	}
 

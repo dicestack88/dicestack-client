@@ -37,7 +37,7 @@ public final class CoordinatesHud implements HudElement {
 	@Override
 	public int getHeight(PvpContext context) {
 		HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
-		return 9 + style.padding * 2;
+		return 20 + style.padding * 2;
 	}
 
 	@Override
@@ -46,8 +46,11 @@ public final class CoordinatesHud implements HudElement {
 			refresh(context);
 			HudAppearanceConfig style = HudRenderer.resolveAppearance(context, getId());
 			HudRenderer.drawPanel(context, getId(), x, y, getWidth(context), getHeight(context));
-			HudRenderer.drawText(context, getId(), minecraft, cachedText, x + style.padding, y + style.padding,
-					Math.max(1, getWidth(context) - style.padding * 2));
+			HudRenderer.drawAccent(x, y + style.padding, getHeight(context) - style.padding * 2, style);
+			HudRenderer.drawLabel(context, getId(), minecraft, "COORDINATES", x + style.padding + 4,
+					y + style.padding);
+			HudRenderer.drawText(context, getId(), minecraft, cachedText, x + style.padding + 4,
+					y + style.padding + 9, Math.max(1, getWidth(context) - style.padding * 2 - 4));
 		}
 	}
 

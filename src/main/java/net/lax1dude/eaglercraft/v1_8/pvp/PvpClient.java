@@ -14,6 +14,9 @@ import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemFood;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MathHelper;
 
@@ -210,9 +213,56 @@ public final class PvpClient {
 		return config != null && config.enabled && config.freelookEnabled;
 	}
 
+	public static boolean isFreelookToggleMode() {
+		PvpConfig config = instance == null ? null : instance.configStore.getConfig();
+		return config != null && config.enabled && config.freelookToggleMode;
+	}
+
 	public static boolean isFreelookActive() {
 		return instance != null && instance.minecraft.entityRenderer != null
 				&& instance.minecraft.entityRenderer.isFreelookActive();
+	}
+
+	public static void renderVanillaFoodOverlay(EntityPlayer player, int foodLevel, int right, int foodY) {
+		PvpClient client = instance;
+		if(client == null || player == null || client.minecraft.thePlayer != player
+				|| !client.configStore.getConfig().enabled
+				|| !client.configStore.getConfig().vanillaFoodOverlayEnabled) {
+			return;
+		}
+
+		float saturation = Math.max(0.0f, player.getFoodStats().getSaturationLevel());
+		int saturationHalfPoints = Math.min(foodLevel, MathHelper.ceiling_float_int(saturation));
+		for(int point = 0; point < saturationHalfPoints; ++point) {
+			int icon = point / 2;
+			int x = right - icon * 8 - 9;
+			int left = point % 2 == 0 ? x : x + 5;
+			float amount = Math.min(1.0f, saturation - point);
+			int fillWidth = Math.max(1, Math.min(4, MathHelper.ceiling_float_int(amount * 4.0f)));
+			Gui.drawRect(left, foodY + 6, left + fillWidth, foodY + 8, 0xDDEFCB62);
+		}
+
+		ItemStack held = player.getHeldItem();
+		if(held != null && held.getItem() instanceof ItemFood && foodLevel < 20) {
+			ItemFood food = (ItemFood) held.getItem();
+			int restored = Math.min(20 - foodLevel, food.getHealAmount(held));
+			for(int point = 0; point < restored; ++point) {
+				int hungerPoint = foodLevel + point;
+				int icon = hungerPoint / 2;
+				int x = right - icon * 8 - 9;
+				int left = hungerPoint % 2 == 0 ? x : x + 5;
+				Gui.drawRect(left, foodY + 2, left + 4, foodY + 4, 0xB853D6A3);
+			}
+		}
+
+		float exhaustion = player.getFoodStats().getFoodExhaustionLevel();
+		int barLeft = right - 81;
+		int barY = foodY + 10;
+		Gui.drawRect(barLeft, barY, right, barY + 2, 0x990A1018);
+		int exhaustionWidth = Math.max(0, Math.min(81, (int) (exhaustion * 20.25f)));
+		if(exhaustionWidth > 0) {
+			Gui.drawRect(barLeft, barY, barLeft + exhaustionWidth, barY + 1, 0xFF53D6A3);
+		}
 	}
 
 	public static boolean isClearWaterEnabled() {

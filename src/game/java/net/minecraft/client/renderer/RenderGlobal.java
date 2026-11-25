@@ -654,7 +654,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 									? ((EntityLivingBase) this.mc.getRenderViewEntity()).isPlayerSleeping()
 									: false;
 							if ((entity2 != this.mc.getRenderViewEntity() || this.mc.gameSettings.thirdPersonView != 0
-									|| flag3)
+									|| PvpClient.isFreelookActive() || flag3)
 									&& (entity2.posY < 0.0D || entity2.posY >= 256.0D
 											|| this.theWorld.isBlockLoaded(new BlockPos(entity2)))) {
 								++this.countEntitiesRendered;

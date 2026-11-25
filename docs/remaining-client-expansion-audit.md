@@ -13,8 +13,8 @@ in this branch; **[~]** partial/alternative; **[ ]** not implemented;
 - [+] Custom FOV, applied locally without changing the saved vanilla FOV.
 - [+] Improved Third-Person Distance controls are configurable locally.
 - [+] Zoom enable/mode/strength/smoothness are configurable.
-- [!] Freelook: player rotation is shared by local targeting and network movement;
-  no verified local-only camera rotation path is available.
+- [+] Freelook uses camera-only rotation, Hold/Toggle controls and temporary
+  rear third-person framing without changing gameplay perspective or targeting.
 
 ## World visuals
 

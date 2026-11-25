@@ -139,6 +139,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	private boolean freelookActive;
 	private Entity freelookEntity;
 	private WorldClient freelookWorld;
+	private int freelookOriginalPerspective = -1;
+	private boolean freelookToggleRequested;
+	private boolean freelookBlockedUntilRelease;
 	private float freelookYaw;
 	private float freelookPitch;
 	private float freelookPrevYaw;
@@ -400,24 +403,64 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		return this.freelookActive;
 	}
 
-	private void updateFreelookState(boolean held) {
+	private void updateFreelookState(boolean focused) {
 		EntityPlayer player = this.mc.thePlayer;
 		Entity viewEntity = this.mc.getRenderViewEntity();
-		boolean valid = held && PvpClient.isFreelookEnabled() && this.mc.theWorld != null && player != null
+		boolean toggleMode = PvpClient.isFreelookToggleMode();
+		boolean pressed = this.mc.gameSettings.keyBindPvpFreelook.isPressed();
+		boolean keyDown = this.mc.gameSettings.keyBindPvpFreelook.isKeyDown();
+		if (this.freelookActive
+				&& (this.freelookEntity != player || this.freelookWorld != this.mc.theWorld)) {
+			this.endFreelook();
+			this.freelookToggleRequested = false;
+			this.freelookBlockedUntilRelease = keyDown;
+			return;
+		}
+
+		boolean valid = focused && PvpClient.isFreelookEnabled() && this.mc.theWorld != null && player != null
 				&& player.getHealth() > 0.0F && this.mc.currentScreen == null && this.mc.inGameHasFocus
-				&& this.mc.gameSettings.thirdPersonView != 0 && !this.mc.gameSettings.debugCamEnable
-				&& viewEntity == player;
+				&& !this.mc.gameSettings.debugCamEnable && viewEntity == player;
 		if (!valid) {
-			this.freelookActive = false;
-			this.freelookEntity = null;
-			this.freelookWorld = null;
+			this.endFreelook();
+			this.freelookToggleRequested = false;
+			this.freelookBlockedUntilRelease = keyDown;
+			return;
+		}
+
+		if (this.freelookBlockedUntilRelease) {
+			if (keyDown) {
+				return;
+			}
+			this.freelookBlockedUntilRelease = false;
+		}
+
+		if (toggleMode) {
+			if (pressed) {
+				this.freelookToggleRequested = !this.freelookToggleRequested;
+			}
+		} else {
+			this.freelookToggleRequested = false;
+		}
+
+		boolean requested = toggleMode ? this.freelookToggleRequested : keyDown;
+		if (!requested) {
+			this.freelookBlockedUntilRelease = false;
+			this.endFreelook();
+			return;
+		}
+		if (this.freelookActive && this.mc.gameSettings.thirdPersonView != this.freelookOriginalPerspective) {
+			this.freelookToggleRequested = false;
+			this.freelookBlockedUntilRelease = !toggleMode && keyDown;
+			this.endFreelook();
 			return;
 		}
 
 		if (!this.freelookActive || this.freelookEntity != player || this.freelookWorld != this.mc.theWorld) {
+			this.endFreelook();
 			this.freelookActive = true;
 			this.freelookEntity = player;
 			this.freelookWorld = this.mc.theWorld;
+			this.freelookOriginalPerspective = this.mc.gameSettings.thirdPersonView;
 			this.freelookYaw = player.rotationYaw;
 			this.freelookPitch = player.rotationPitch;
 			this.freelookPrevYaw = this.freelookYaw;
@@ -426,6 +469,13 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			this.freelookPrevYaw = this.freelookYaw;
 			this.freelookPrevPitch = this.freelookPitch;
 		}
+	}
+
+	private void endFreelook() {
+		this.freelookActive = false;
+		this.freelookEntity = null;
+		this.freelookWorld = null;
+		this.freelookOriginalPerspective = -1;
 	}
 
 	private void applyMouseLook(float yaw, float pitch) {
@@ -574,7 +624,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 						entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * partialTicks,
 						-1.0F, 0.0F, 0.0F);
 			}
-		} else if (this.mc.gameSettings.thirdPersonView > 0) {
+		} else if (this.mc.gameSettings.thirdPersonView > 0 || this.freelookActive) {
 			double d3 = (double) (this.thirdPersonDistanceTemp
 					+ (this.thirdPersonDistance - this.thirdPersonDistanceTemp) * partialTicks);
 			if (this.mc.gameSettings.debugCamEnable) {
@@ -584,7 +634,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 						? this.getFreelookYaw(partialTicks) : entity.rotationYaw;
 				float f2 = this.freelookActive && entity == this.freelookEntity
 						? this.getFreelookPitch(partialTicks) : entity.rotationPitch;
-				if (this.mc.gameSettings.thirdPersonView == 2) {
+				if (this.mc.gameSettings.thirdPersonView == 2 && !this.freelookActive) {
 					f2 += 180.0F;
 				}
 
@@ -612,7 +662,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 					}
 				}
 
-				if (this.mc.gameSettings.thirdPersonView == 2) {
+				if (this.mc.gameSettings.thirdPersonView == 2 && !this.freelookActive) {
 					GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
 				}
 
@@ -749,7 +799,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 
 			boolean flag = this.mc.getRenderViewEntity() instanceof EntityLivingBase
 					&& ((EntityLivingBase) this.mc.getRenderViewEntity()).isPlayerSleeping();
-			if (this.mc.gameSettings.thirdPersonView == 0 && !flag && !this.mc.gameSettings.hideGUI
+			if (this.mc.gameSettings.thirdPersonView == 0 && !this.freelookActive && !flag && !this.mc.gameSettings.hideGUI
 					&& !this.mc.playerController.isSpectator()) {
 				this.enableLightmap();
 				this.itemRenderer.renderItemInFirstPerson(partialTicks);
@@ -757,7 +807,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			}
 
 			GlStateManager.popMatrix();
-			if (this.mc.gameSettings.thirdPersonView == 0 && !flag) {
+			if (this.mc.gameSettings.thirdPersonView == 0 && !this.freelookActive && !flag) {
 				this.itemRenderer.renderOverlays(partialTicks);
 				this.hurtCameraEffect(partialTicks);
 			}
@@ -948,8 +998,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			initializedOF = true;
 		}
 		boolean flag = Display.isActive() || mc.gameSettings.touchscreen;
-		this.updateFreelookState(flag && this.mc.inGameHasFocus
-				&& this.mc.gameSettings.keyBindPvpFreelook.isKeyDown());
+		this.updateFreelookState(flag && this.mc.inGameHasFocus);
 		if (!flag && this.mc.gameSettings.pauseOnLostFocus
 				&& (!this.mc.gameSettings.touchscreen || !PointerInputAbstraction.getVCursorButtonDown(1))) {
 			if (Minecraft.getSystemTime() - this.prevFrameTime > 500L) {
