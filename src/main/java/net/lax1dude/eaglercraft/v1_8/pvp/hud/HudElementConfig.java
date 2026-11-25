@@ -69,34 +69,7 @@ public final class HudElementConfig {
 		result.appearanceOverride = json.optBoolean("appearanceOverride", defaults.appearanceOverride);
 		JSONObject appearance = json.optJSONObject("appearance");
 		if(appearance != null) {
-			HudAppearanceConfig appearanceDefaults = HudAppearanceConfig.copy(defaults.appearance);
-			result.appearance.preset = HudAppearanceConfig.fromJson(appearance, appearanceDefaults).preset;
-			HudAppearanceConfig parsed = HudAppearanceConfig.fromJson(appearance, appearanceDefaults);
-			JSONObject parsedJson = parsed.toJson();
-			HudAppearanceConfig copied = HudAppearanceConfig.fromJson(parsedJson, result.appearance);
-			result.appearance.preset = copied.preset;
-			result.appearance.backgroundEnabled = copied.backgroundEnabled;
-			result.appearance.gradientEnabled = copied.gradientEnabled;
-			result.appearance.gradientDirection = copied.gradientDirection;
-			result.appearance.gradientStart = copied.gradientStart;
-			result.appearance.gradientEnd = copied.gradientEnd;
-			result.appearance.backgroundOpacity = copied.backgroundOpacity;
-			result.appearance.borderEnabled = copied.borderEnabled;
-			result.appearance.borderThickness = copied.borderThickness;
-			result.appearance.borderColor = copied.borderColor;
-			result.appearance.borderOpacity = copied.borderOpacity;
-			result.appearance.textColor = copied.textColor;
-			result.appearance.textOpacity = copied.textOpacity;
-			result.appearance.accentColor = copied.accentColor;
-			result.appearance.textShadow = copied.textShadow;
-			result.appearance.panelShadow = copied.panelShadow;
-			result.appearance.shadowIntensity = copied.shadowIntensity;
-			result.appearance.padding = copied.padding;
-			result.appearance.spacing = copied.spacing;
-			result.appearance.cornerRadius = copied.cornerRadius;
-			result.appearance.textScale = copied.textScale;
-			result.appearance.textAlignment = copied.textAlignment;
-			result.appearance.rainbowEnabled = copied.rainbowEnabled;
+			result.appearance.copyFrom(HudAppearanceConfig.fromJson(appearance, defaults.appearance));
 		}
 		result.keystrokesWASD = json.optBoolean("keystrokesWASD", defaults.keystrokesWASD);
 		result.keystrokesSpace = json.optBoolean("keystrokesSpace", defaults.keystrokesSpace);

@@ -165,8 +165,37 @@ public final class HudAppearanceConfig {
 
 	public static HudAppearanceConfig copy(HudAppearanceConfig source) {
 		HudAppearanceConfig result = new HudAppearanceConfig();
-		JSONObject json = source.toJson();
-		return fromJson(json, result);
+		result.copyFrom(source);
+		return result;
+	}
+
+	public void copyFrom(HudAppearanceConfig source) {
+		if(source == null) {
+			return;
+		}
+		preset = source.preset;
+		backgroundEnabled = source.backgroundEnabled;
+		gradientEnabled = source.gradientEnabled;
+		gradientDirection = source.gradientDirection;
+		gradientStart = source.gradientStart;
+		gradientEnd = source.gradientEnd;
+		backgroundOpacity = source.backgroundOpacity;
+		borderEnabled = source.borderEnabled;
+		borderThickness = source.borderThickness;
+		borderColor = source.borderColor;
+		borderOpacity = source.borderOpacity;
+		textColor = source.textColor;
+		textOpacity = source.textOpacity;
+		accentColor = source.accentColor;
+		textShadow = source.textShadow;
+		panelShadow = source.panelShadow;
+		shadowIntensity = source.shadowIntensity;
+		padding = source.padding;
+		spacing = source.spacing;
+		cornerRadius = source.cornerRadius;
+		textScale = source.textScale;
+		textAlignment = source.textAlignment;
+		rainbowEnabled = source.rainbowEnabled;
 	}
 
 	private static int clampColor(int color) {

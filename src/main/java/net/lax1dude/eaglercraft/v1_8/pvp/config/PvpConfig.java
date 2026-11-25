@@ -168,31 +168,7 @@ public final class PvpConfig {
 	}
 
 	private static void copyAppearance(HudAppearanceConfig destination, HudAppearanceConfig source) {
-		JSONObject json = source.toJson();
-		HudAppearanceConfig copied = HudAppearanceConfig.fromJson(json, destination);
-		destination.preset = copied.preset;
-		destination.backgroundEnabled = copied.backgroundEnabled;
-		destination.gradientEnabled = copied.gradientEnabled;
-		destination.gradientDirection = copied.gradientDirection;
-		destination.gradientStart = copied.gradientStart;
-		destination.gradientEnd = copied.gradientEnd;
-		destination.backgroundOpacity = copied.backgroundOpacity;
-		destination.borderEnabled = copied.borderEnabled;
-		destination.borderThickness = copied.borderThickness;
-		destination.borderColor = copied.borderColor;
-		destination.borderOpacity = copied.borderOpacity;
-		destination.textColor = copied.textColor;
-		destination.textOpacity = copied.textOpacity;
-		destination.accentColor = copied.accentColor;
-		destination.textShadow = copied.textShadow;
-		destination.panelShadow = copied.panelShadow;
-		destination.shadowIntensity = copied.shadowIntensity;
-		destination.padding = copied.padding;
-		destination.spacing = copied.spacing;
-		destination.cornerRadius = copied.cornerRadius;
-		destination.textScale = copied.textScale;
-		destination.textAlignment = copied.textAlignment;
-		destination.rainbowEnabled = copied.rainbowEnabled;
+		destination.copyFrom(source);
 	}
 
 }
