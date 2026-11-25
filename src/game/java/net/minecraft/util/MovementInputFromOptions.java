@@ -3,6 +3,7 @@ package net.minecraft.util;
 import net.lax1dude.eaglercraft.v1_8.touch_gui.EnumTouchControl;
 import net.lax1dude.eaglercraft.v1_8.touch_gui.TouchControls;
 import net.minecraft.client.settings.GameSettings;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 
 /**+
  * This portion of EaglercraftX contains deobfuscated Minecraft 1.8 source code.
@@ -57,6 +58,7 @@ public class MovementInputFromOptions extends MovementInput {
 		this.jump = this.gameSettings.keyBindJump.isKeyDown() || TouchControls.isPressed(EnumTouchControl.JUMP)
 				|| TouchControls.isPressed(EnumTouchControl.FLY_UP);
 		this.sneak = this.gameSettings.keyBindSneak.isKeyDown() || TouchControls.getSneakToggled()
+				|| PvpClient.isSneakToggled()
 				|| TouchControls.isPressed(EnumTouchControl.FLY_DOWN);
 		if (this.sneak) {
 			this.moveStrafe = (float) ((double) this.moveStrafe * 0.3D);

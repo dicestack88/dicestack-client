@@ -1441,6 +1441,9 @@ public class Minecraft implements IThreadListener {
 				}
 
 				this.dispatchKeypresses();
+				if(this.pvpClient != null) {
+					this.pvpClient.handleKeyPresses();
+				}
 				if (Keyboard.getEventKeyState()) {
 					if (EaglerDeferredPipeline.instance != null) {
 						if (k == 62) {
@@ -1464,7 +1467,6 @@ public class Minecraft implements IThreadListener {
 								this.pvpClient.openHudEditor();
 							}
 						}
-
 						if (k == 1 || (k > -1 && k == this.gameSettings.keyBindClose.getKeyCode())) {
 							this.displayInGameMenu();
 						}
@@ -1563,7 +1565,9 @@ public class Minecraft implements IThreadListener {
 				}
 			}
 
-			boolean zoomKey = this.gameSettings.keyBindZoomCamera.isKeyDown();
+			boolean zoomKey = this.pvpClient != null
+					? this.pvpClient.updateZoomKey(this.gameSettings.keyBindZoomCamera.isKeyDown())
+					: this.gameSettings.keyBindZoomCamera.isKeyDown();
 			if (zoomKey != isZoomKey) {
 				adjustedZoomValue = startZoomValue;
 				isZoomKey = zoomKey;
@@ -2289,6 +2293,9 @@ public class Minecraft implements IThreadListener {
 	 */
 	public void setServerData(ServerData serverDataIn) {
 		this.currentServerData = serverDataIn;
+		if(this.pvpClient != null && serverDataIn != null) {
+			this.pvpClient.recordServerData(serverDataIn);
+		}
 		EagRuntime.setMCServerWindowGlobal(serverDataIn != null ? serverDataIn.serverIP : null);
 	}
 
