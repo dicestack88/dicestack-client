@@ -9,6 +9,7 @@ import java.util.List;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftRandom;
 import net.lax1dude.eaglercraft.v1_8.HString;
 import net.lax1dude.eaglercraft.v1_8.PointerInputAbstraction;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 
 import java.util.concurrent.Callable;
 
@@ -392,7 +393,8 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	 */
 	private void updateFovModifierHand() {
 		float f = 1.0F;
-		if (this.mc.getRenderViewEntity() instanceof AbstractClientPlayer) {
+		if (!PvpClient.isNoDynamicFovEnabled()
+				&& this.mc.getRenderViewEntity() instanceof AbstractClientPlayer) {
 			AbstractClientPlayer abstractclientplayer = (AbstractClientPlayer) this.mc.getRenderViewEntity();
 			f = abstractclientplayer.getFovModifier();
 		}
@@ -439,6 +441,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	}
 
 	private void hurtCameraEffect(float partialTicks) {
+		if (PvpClient.isNoHurtTiltEnabled()) {
+			return;
+		}
 		if (this.mc.getRenderViewEntity() instanceof EntityLivingBase) {
 			EntityLivingBase entitylivingbase = (EntityLivingBase) this.mc.getRenderViewEntity();
 			float f = (float) entitylivingbase.hurtTime - partialTicks;
@@ -806,7 +811,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 						f10 = 1.0F;
 					}
 
-					float f16 = this.mc.gameSettings.gammaSetting;
+					float f16 = PvpClient.getEffectiveGamma(this.mc.gameSettings.gammaSetting);
 					float f17 = 1.0F - f8;
 					float f13 = 1.0F - f9;
 					float f14 = 1.0F - f10;
@@ -957,7 +962,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 					GlStateManager.disableLighting();
 					GlStateManager.enableBlend();
 					if (Minecraft.isFancyGraphicsEnabled()) {
-						this.mc.ingameGUI.renderVignette(this.mc.thePlayer.getBrightness(parFloat1), l, i1);
+						if (!PvpClient.isVignetteHidden()) {
+							this.mc.ingameGUI.renderVignette(this.mc.thePlayer.getBrightness(parFloat1), l, i1);
+						}
 					}
 					this.mc.ingameGUI.renderGameOverlayCrosshairs(l, i1);
 					GlStateManager.bindTexture(this.overlayFramebuffer.getTexture());
@@ -1458,6 +1465,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	 * Render rain and snow
 	 */
 	protected void renderRainSnow(float partialTicks) {
+		if (PvpClient.isWeatherHidden()) {
+			return;
+		}
 		float f = this.mc.theWorld.getRainStrength(partialTicks);
 		if (f > 0.0F) {
 			boolean df = DeferredStateManager.isInDeferredPass();
@@ -1809,6 +1819,10 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	 * is used for sky rendering.
 	 */
 	private void setupFog(int partialTicks, float parFloat1) {
+		if (PvpClient.isNoFogEnabled()) {
+			GlStateManager.disableFog();
+			return;
+		}
 		Entity entity = this.mc.getRenderViewEntity();
 		boolean flag = false;
 		if (entity instanceof EntityPlayer) {

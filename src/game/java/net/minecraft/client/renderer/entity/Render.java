@@ -3,6 +3,7 @@ package net.minecraft.client.renderer.entity;
 import static net.lax1dude.eaglercraft.v1_8.opengl.RealOpenGLEnums.*;
 
 import net.lax1dude.eaglercraft.v1_8.minecraft.EaglerTextureAtlasSprite;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
@@ -323,6 +324,7 @@ public abstract class Render<T extends Entity> {
 	public void doRenderShadowAndFire(Entity entityIn, double x, double y, double z, float yaw, float partialTicks) {
 		if (this.renderManager.options != null) {
 			if (!DeferredStateManager.isInDeferredPass() && this.renderManager.options.field_181151_V
+					&& !PvpClient.isEntityShadowsDisabled()
 					&& this.shadowSize > 0.0F && !entityIn.isInvisible() && this.renderManager.isRenderShadow()) {
 				double d0 = this.renderManager.getDistanceToCamera(entityIn.posX, entityIn.posY, entityIn.posZ);
 				float f = (float) ((1.0D - d0 / 256.0D) * (double) this.shadowOpaque);

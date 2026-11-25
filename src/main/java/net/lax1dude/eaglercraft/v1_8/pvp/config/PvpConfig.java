@@ -10,7 +10,15 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class PvpConfig {
 
-	public static final int CONFIG_VERSION = 4;
+	public static final int CONFIG_VERSION = 5;
+
+	public enum CrosshairStyle {
+		VANILLA,
+		DOT,
+		CIRCLE,
+		CROSS,
+		CIRCLE_DOT
+	}
 
 	public enum CoordinateFormat {
 		LABELLED,
@@ -37,6 +45,30 @@ public final class PvpConfig {
 	public boolean clockShowSeconds = false;
 	public String lastServerName = "";
 	public String lastServerAddress = "";
+	public boolean noDynamicFov;
+	public boolean noHurtTilt;
+	public boolean noFog;
+	public boolean hideWeather;
+	public boolean hideVignette;
+	public boolean hideFireOverlay;
+	public boolean hidePumpkinOverlay;
+	public boolean hidePortalOverlay;
+	public boolean fullbright;
+	public boolean disableEntityShadows;
+	public boolean hideServerAddress;
+	public boolean hideChat;
+	public float lowHealthThreshold = 4.0f;
+	public boolean crosshairEnabled;
+	public CrosshairStyle crosshairStyle = CrosshairStyle.CROSS;
+	public int crosshairSize = 5;
+	public int crosshairThickness = 2;
+	public int crosshairGap = 3;
+	public int crosshairColor = 0xFFFFFFFF;
+	public float crosshairOpacity = 1.0f;
+	public boolean crosshairOutline = true;
+	public boolean crosshairDynamicColor;
+	public boolean crosshairHideInMenus = true;
+	public boolean crosshairHideInThirdPerson = true;
 
 	public PvpConfig() {
 		elements.put("fps", new HudElementConfig(true, HudElementConfig.Anchor.TOP_LEFT, 5, 5, 1.0f));
@@ -56,6 +88,16 @@ public final class PvpConfig {
 		elements.put("held_durability", new HudElementConfig(false, HudElementConfig.Anchor.TOP_RIGHT, 5, 80, 1.0f));
 		elements.put("server_address", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_LEFT, 5, 5, 1.0f));
 		elements.put("game_mode", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_LEFT, 5, 20, 1.0f));
+		elements.put("potion_effects", new HudElementConfig(false, HudElementConfig.Anchor.TOP_RIGHT, 5, 95, 1.0f));
+		elements.put("saturation", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 173, 1.0f));
+		elements.put("arrow_count", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_RIGHT, 5, 5, 1.0f));
+		elements.put("sprint_status", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_LEFT, 5, 35, 1.0f));
+		elements.put("sneak_status", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_LEFT, 5, 50, 1.0f));
+		elements.put("target", new HudElementConfig(false, HudElementConfig.Anchor.TOP_CENTER, 0, 5, 1.0f));
+		elements.put("block_info", new HudElementConfig(false, HudElementConfig.Anchor.BOTTOM_CENTER, 0, 5, 1.0f));
+		elements.put("day_counter", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 188, 1.0f));
+		elements.put("light_level", new HudElementConfig(false, HudElementConfig.Anchor.TOP_LEFT, 5, 203, 1.0f));
+		elements.put("low_health", new HudElementConfig(false, HudElementConfig.Anchor.TOP_CENTER, 0, 20, 1.0f));
 	}
 
 	public HudElementConfig getElement(String id) {
@@ -163,6 +205,35 @@ public final class PvpConfig {
 		config.clockShowSeconds = root.optBoolean("clockShowSeconds", false);
 		config.lastServerName = root.optString("lastServerName", "");
 		config.lastServerAddress = root.optString("lastServerAddress", "");
+		config.noDynamicFov = root.optBoolean("noDynamicFov", false);
+		config.noHurtTilt = root.optBoolean("noHurtTilt", false);
+		config.noFog = root.optBoolean("noFog", false);
+		config.hideWeather = root.optBoolean("hideWeather", false);
+		config.hideVignette = root.optBoolean("hideVignette", false);
+		config.hideFireOverlay = root.optBoolean("hideFireOverlay", false);
+		config.hidePumpkinOverlay = root.optBoolean("hidePumpkinOverlay", false);
+		config.hidePortalOverlay = root.optBoolean("hidePortalOverlay", false);
+		config.fullbright = root.optBoolean("fullbright", false);
+		config.disableEntityShadows = root.optBoolean("disableEntityShadows", false);
+		config.hideServerAddress = root.optBoolean("hideServerAddress", false);
+		config.hideChat = root.optBoolean("hideChat", false);
+		config.lowHealthThreshold = clampFloat(root.optDouble("lowHealthThreshold", 4.0d), 1.0f, 20.0f, 4.0f);
+		config.crosshairEnabled = root.optBoolean("crosshairEnabled", false);
+		String crosshairStyle = root.optString("crosshairStyle", CrosshairStyle.CROSS.name());
+		try {
+			config.crosshairStyle = CrosshairStyle.valueOf(crosshairStyle);
+		}catch(RuntimeException ex) {
+			config.crosshairStyle = CrosshairStyle.CROSS;
+		}
+		config.crosshairSize = Math.max(1, Math.min(16, root.optInt("crosshairSize", 5)));
+		config.crosshairThickness = Math.max(1, Math.min(6, root.optInt("crosshairThickness", 2)));
+		config.crosshairGap = Math.max(0, Math.min(12, root.optInt("crosshairGap", 3)));
+		config.crosshairColor = root.optInt("crosshairColor", 0xFFFFFFFF);
+		config.crosshairOpacity = clampFloat(root.optDouble("crosshairOpacity", 1.0d), 0.1f, 1.0f, 1.0f);
+		config.crosshairOutline = root.optBoolean("crosshairOutline", true);
+		config.crosshairDynamicColor = root.optBoolean("crosshairDynamicColor", false);
+		config.crosshairHideInMenus = root.optBoolean("crosshairHideInMenus", true);
+		config.crosshairHideInThirdPerson = root.optBoolean("crosshairHideInThirdPerson", true);
 		return config;
 	}
 
@@ -209,6 +280,30 @@ public final class PvpConfig {
 		root.put("clockShowSeconds", clockShowSeconds);
 		root.put("lastServerName", lastServerName);
 		root.put("lastServerAddress", lastServerAddress);
+		root.put("noDynamicFov", noDynamicFov);
+		root.put("noHurtTilt", noHurtTilt);
+		root.put("noFog", noFog);
+		root.put("hideWeather", hideWeather);
+		root.put("hideVignette", hideVignette);
+		root.put("hideFireOverlay", hideFireOverlay);
+		root.put("hidePumpkinOverlay", hidePumpkinOverlay);
+		root.put("hidePortalOverlay", hidePortalOverlay);
+		root.put("fullbright", fullbright);
+		root.put("disableEntityShadows", disableEntityShadows);
+		root.put("hideServerAddress", hideServerAddress);
+		root.put("hideChat", hideChat);
+		root.put("lowHealthThreshold", lowHealthThreshold);
+		root.put("crosshairEnabled", crosshairEnabled);
+		root.put("crosshairStyle", crosshairStyle.name());
+		root.put("crosshairSize", crosshairSize);
+		root.put("crosshairThickness", crosshairThickness);
+		root.put("crosshairGap", crosshairGap);
+		root.put("crosshairColor", crosshairColor);
+		root.put("crosshairOpacity", crosshairOpacity);
+		root.put("crosshairOutline", crosshairOutline);
+		root.put("crosshairDynamicColor", crosshairDynamicColor);
+		root.put("crosshairHideInMenus", crosshairHideInMenus);
+		root.put("crosshairHideInThirdPerson", crosshairHideInThirdPerson);
 		JSONObject elementsObject = new JSONObject();
 		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
 			elementsObject.put(entry.getKey(), entry.getValue().toJson());
