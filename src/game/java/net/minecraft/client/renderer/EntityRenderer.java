@@ -605,6 +605,12 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		double d0 = entity.prevPosX + (entity.posX - entity.prevPosX) * (double) partialTicks;
 		double d1 = entity.prevPosY + (entity.posY - entity.prevPosY) * (double) partialTicks + (double) f;
 		double d2 = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * (double) partialTicks;
+		boolean freelookForEntity = this.freelookActive && entity == this.freelookEntity
+				&& entity == this.mc.thePlayer && this.mc.theWorld != null && this.freelookWorld == this.mc.theWorld;
+		if (freelookForEntity && !this.mc.gameSettings.debugCamEnable) {
+			this.orientFreelookCamera(entity, partialTicks, d0, d1, d2);
+			return;
+		}
 		if (entity instanceof EntityLivingBase && ((EntityLivingBase) entity).isPlayerSleeping()) {
 			f = (float) ((double) f + 1.0D);
 			GlStateManager.translate(0.0F, 0.3F, 0.0F);
@@ -624,17 +630,15 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 						entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * partialTicks,
 						-1.0F, 0.0F, 0.0F);
 			}
-		} else if (this.mc.gameSettings.thirdPersonView > 0 || this.freelookActive) {
+		} else if (this.mc.gameSettings.thirdPersonView > 0 || freelookForEntity) {
 			double d3 = (double) (this.thirdPersonDistanceTemp
 					+ (this.thirdPersonDistance - this.thirdPersonDistanceTemp) * partialTicks);
 			if (this.mc.gameSettings.debugCamEnable) {
 				GlStateManager.translate(0.0F, 0.0F, (float) (-d3));
 			} else {
-				float f1 = this.freelookActive && entity == this.freelookEntity
-						? this.getFreelookYaw(partialTicks) : entity.rotationYaw;
-				float f2 = this.freelookActive && entity == this.freelookEntity
-						? this.getFreelookPitch(partialTicks) : entity.rotationPitch;
-				if (this.mc.gameSettings.thirdPersonView == 2 && !this.freelookActive) {
+				float f1 = freelookForEntity ? this.getFreelookYaw(partialTicks) : entity.rotationYaw;
+				float f2 = freelookForEntity ? this.getFreelookPitch(partialTicks) : entity.rotationPitch;
+				if (this.mc.gameSettings.thirdPersonView == 2 && !freelookForEntity) {
 					f2 += 180.0F;
 				}
 
@@ -662,7 +666,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 					}
 				}
 
-				if (this.mc.gameSettings.thirdPersonView == 2 && !this.freelookActive) {
+				if (this.mc.gameSettings.thirdPersonView == 2 && !freelookForEntity) {
 					GlStateManager.rotate(180.0F, 0.0F, 1.0F, 0.0F);
 				}
 
@@ -697,6 +701,52 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		d1 = entity.prevPosY + (entity.posY - entity.prevPosY) * (double) partialTicks + (double) f;
 		d2 = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * (double) partialTicks;
 		this.cloudFog = this.mc.renderGlobal.hasCloudFog(d0, d1, d2, partialTicks);
+	}
+
+	private void orientFreelookCamera(Entity entity, float partialTicks,
+			double centerX, double centerY, double centerZ) {
+		float yaw = this.getFreelookYaw(partialTicks);
+		float pitch = this.getFreelookPitch(partialTicks);
+		double distance = this.thirdPersonDistanceTemp
+				+ (this.thirdPersonDistance - this.thirdPersonDistanceTemp) * (double) partialTicks;
+		float yawRadians = yaw / 180.0F * 3.1415927F;
+		float pitchRadians = pitch / 180.0F * 3.1415927F;
+		double offsetX = (double) (MathHelper.sin(yawRadians) * MathHelper.cos(pitchRadians));
+		double offsetY = (double) MathHelper.sin(pitchRadians);
+		double offsetZ = (double) (-MathHelper.cos(yawRadians) * MathHelper.cos(pitchRadians));
+
+		for (int i = 0; i < 8; ++i) {
+			double sampleX = ((i & 1) * 2 - 1) * 0.1D;
+			double sampleY = ((i >> 1 & 1) * 2 - 1) * 0.1D;
+			double sampleZ = ((i >> 2 & 1) * 2 - 1) * 0.1D;
+			Vec3 start = new Vec3(centerX + sampleX, centerY + sampleY, centerZ + sampleZ);
+			Vec3 end = new Vec3(centerX + offsetX * distance + sampleX + sampleZ,
+					centerY + offsetY * distance + sampleY, centerZ + offsetZ * distance + sampleZ);
+			MovingObjectPosition hit = this.mc.theWorld.rayTraceBlocks(start, end);
+			if (hit != null) {
+				double hitX = hit.hitVec.xCoord - centerX;
+				double hitY = hit.hitVec.yCoord - centerY;
+				double hitZ = hit.hitVec.zCoord - centerZ;
+				distance = Math.min(distance, Math.sqrt(hitX * hitX + hitY * hitY + hitZ * hitZ));
+			}
+		}
+
+		// The world is already player-relative here, so use the orbit offset rather than world coordinates.
+		GlStateManager.rotate(pitch, 1.0F, 0.0F, 0.0F);
+		GlStateManager.rotate(yaw + 180.0F, 0.0F, 1.0F, 0.0F);
+		GlStateManager.translate((float) (-offsetX * distance),
+				(float) (-entity.getEyeHeight() - offsetY * distance), (float) (-offsetZ * distance));
+		this.cloudFog = this.mc.renderGlobal.hasCloudFog(centerX, centerY, centerZ, partialTicks);
+	}
+
+	private void updateActiveRenderInfo(float partialTicks) {
+		EntityPlayer player = this.mc.thePlayer;
+		boolean freelookForPlayer = this.freelookActive && this.freelookEntity == player
+				&& this.freelookWorld == this.mc.theWorld && this.mc.getRenderViewEntity() == player;
+		float yaw = freelookForPlayer ? this.getFreelookYaw(partialTicks) : player.rotationYaw;
+		float pitch = freelookForPlayer ? this.getFreelookPitch(partialTicks) : player.rotationPitch;
+		ActiveRenderInfo.updateRenderInfo(player,
+				!freelookForPlayer && this.mc.gameSettings.thirdPersonView == 2, yaw, pitch);
 	}
 
 	/**+
@@ -1318,7 +1368,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		if (isDynamicLights) {
 			DynamicLightsStateManager.setupInverseViewMatrix();
 		}
-		ActiveRenderInfo.updateRenderInfo(this.mc.thePlayer, this.mc.gameSettings.thirdPersonView == 2);
+		this.updateActiveRenderInfo(partialTicks);
 		Frustum frustum = new Frustum();
 		Entity entity = this.mc.getRenderViewEntity();
 		double d0 = entity.lastTickPosX + (entity.posX - entity.lastTickPosX) * (double) partialTicks;
@@ -2048,7 +2098,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		GlStateManager.viewport(0, 0, mc.displayWidth, mc.displayHeight);
 		setupCameraTransform(partialTicks, 2);
 		EaglerDeferredPipeline.instance.loadViewMatrix();
-		ActiveRenderInfo.updateRenderInfo(mc.thePlayer, mc.gameSettings.thirdPersonView == 2);
+		updateActiveRenderInfo(partialTicks);
 		Frustum frustum = new Frustum();
 		Entity entity = mc.getRenderViewEntity();
 		if (entity == null) {

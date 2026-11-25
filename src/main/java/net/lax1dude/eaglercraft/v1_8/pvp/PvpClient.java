@@ -458,15 +458,35 @@ public final class PvpClient {
 	}
 
 	public void openHudEditor() {
-		minecraft.displayGuiScreen(new GuiScreenPvpHudEditor(this));
+		minecraft.displayGuiScreen(new GuiScreenPvpHudEditor(this, null));
+	}
+
+	public void openHudEditor(GuiScreen parent) {
+		minecraft.displayGuiScreen(new GuiScreenPvpHudEditor(this, parent));
 	}
 
 	public void openHudModuleManager() {
-		minecraft.displayGuiScreen(new GuiScreenPvpHudModuleManager(this));
+		minecraft.displayGuiScreen(new GuiScreenPvpHudModuleManager(this, null));
+	}
+
+	public void openHudModuleManager(GuiScreen parent) {
+		minecraft.displayGuiScreen(new GuiScreenPvpHudModuleManager(this, parent));
+	}
+
+	public void openHudModuleManager(GuiScreen parent, String searchText) {
+		minecraft.displayGuiScreen(new GuiScreenPvpHudModuleManager(this, parent, searchText));
+	}
+
+	public void openClientMenu() {
+		minecraft.displayGuiScreen(new GuiScreenPvpClientMenu(this, null));
 	}
 
 	public void openQolSettings(GuiScreen parent) {
 		minecraft.displayGuiScreen(new GuiScreenPvpQolSettings(this, parent));
+	}
+
+	public void openQolSettings(GuiScreen parent, int page, String searchText) {
+		minecraft.displayGuiScreen(new GuiScreenPvpQolSettings(this, parent, page, searchText));
 	}
 
 	public void recordServerData(ServerData serverData) {
