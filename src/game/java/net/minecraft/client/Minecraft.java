@@ -1362,7 +1362,7 @@ public class Minecraft implements IThreadListener {
 					KeyBinding.setKeyBindState(i - 100, Mouse.getEventButtonState());
 					if (Mouse.getEventButtonState()) {
 						PointerInputAbstraction.enterMouseModeHook();
-						if(this.pvpClient != null) {
+						if(this.pvpClient != null && this.currentScreen == null) {
 							this.pvpClient.recordMouseClick(i);
 						}
 						if (this.thePlayer.isSpectator() && i == 2) {
@@ -1455,6 +1455,12 @@ public class Minecraft implements IThreadListener {
 					if (this.currentScreen != null) {
 						this.currentScreen.handleKeyboardInput();
 					} else {
+						while (this.gameSettings.keyBindPvpHudEditor.isPressed()) {
+							if (this.theWorld != null && this.thePlayer != null && this.pvpClient != null) {
+								this.pvpClient.openHudEditor();
+							}
+						}
+
 						if (k == 1 || (k > -1 && k == this.gameSettings.keyBindClose.getKeyCode())) {
 							this.displayInGameMenu();
 						}

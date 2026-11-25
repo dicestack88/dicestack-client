@@ -160,6 +160,8 @@ public class GameSettings {
 	public KeyBinding keyBindZoomCamera = new KeyBinding("key.zoomCamera", KeyboardConstants.KEY_C,
 			"key.categories.misc");
 	public KeyBinding keyBindFunction = new KeyBinding("key.function", KeyboardConstants.KEY_F, "key.categories.misc");
+	public KeyBinding keyBindPvpHudEditor = new KeyBinding("key.pvp.hudEditor", KeyboardConstants.KEY_H,
+			"key.categories.misc");
 	public KeyBinding keyBindClose = new KeyBinding("key.close", KeyboardConstants.KEY_GRAVE, "key.categories.misc");
 	public KeyBinding[] keyBindsHotbar = new KeyBinding[] {
 			new KeyBinding("key.hotbar.1", 2, "key.categories.inventory"),
@@ -242,7 +244,7 @@ public class GameSettings {
 				this.keyBindSneak, this.keyBindSprint, this.keyBindDrop, this.keyBindInventory, this.keyBindChat,
 				this.keyBindPlayerList, this.keyBindPickBlock, this.keyBindCommand, this.keyBindScreenshot,
 				this.keyBindTogglePerspective, this.keyBindSmoothCamera, this.keyBindZoomCamera, this.keyBindFunction,
-				this.keyBindClose }, this.keyBindsHotbar);
+				this.keyBindPvpHudEditor, this.keyBindClose }, this.keyBindsHotbar);
 		this.difficulty = EnumDifficulty.NORMAL;
 		this.relayTimeout = 4;
 		this.hideJoinCode = false;

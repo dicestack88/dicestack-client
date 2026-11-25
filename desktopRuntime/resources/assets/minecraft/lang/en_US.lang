@@ -1124,6 +1124,7 @@ key.pickItem=Pick Block
 key.mouseButton=Button %1$s
 key.command=Open Command
 key.screenshot=Take Screenshot
+key.pvp.hudEditor=Open HUD Editor
 key.togglePerspective=Toggle Perspective
 key.smoothCamera=Toggle Cinematic Camera
 key.fullscreen=Toggle Fullscreen
