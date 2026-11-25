@@ -34,6 +34,7 @@ public final class HudManager {
 		this.config = config;
 		this.minecraft = minecraft;
 		this.context = new PvpContext(minecraft, null, 0.0f, null);
+		this.context.config = config;
 		register(new FpsHud(minecraft), "FPS Counter", HudModuleInfo.Category.CORE);
 		register(new CoordinatesHud(minecraft), "Coordinates", HudModuleInfo.Category.CORE);
 		register(new CpsHud(minecraft), "CPS Counter", HudModuleInfo.Category.PVP);
@@ -113,6 +114,19 @@ public final class HudManager {
 		HudElementConfig elementConfig = getElementConfig(element);
 		int elementWidth = getElementWidth(element);
 		int screenWidth = resolution.getScaledWidth();
+		if(config.automaticLayout) {
+			HudElementConfig.Anchor anchor = elementConfig.anchor;
+			if(anchor == HudElementConfig.Anchor.TOP_LEFT
+					|| anchor == HudElementConfig.Anchor.CENTER_LEFT
+					|| anchor == HudElementConfig.Anchor.BOTTOM_LEFT) {
+				return config.layoutSafeMargin;
+			}
+			if(anchor == HudElementConfig.Anchor.TOP_RIGHT
+					|| anchor == HudElementConfig.Anchor.CENTER_RIGHT
+					|| anchor == HudElementConfig.Anchor.BOTTOM_RIGHT) {
+				return screenWidth - elementWidth - config.layoutSafeMargin;
+			}
+		}
 		return clamp(resolveX(elementConfig, screenWidth, elementWidth), 0, screenWidth - elementWidth);
 	}
 
@@ -120,6 +134,39 @@ public final class HudManager {
 		HudElementConfig elementConfig = getElementConfig(element);
 		int elementHeight = getElementHeight(element);
 		int screenHeight = resolution.getScaledHeight();
+		if(config.automaticLayout) {
+			HudElementConfig.Anchor anchor = elementConfig.anchor;
+			if(anchor == HudElementConfig.Anchor.TOP_LEFT || anchor == HudElementConfig.Anchor.TOP_RIGHT) {
+				int y = config.layoutSafeMargin;
+				for(int i = 0; i < modules.size(); ++i) {
+					HudElement other = modules.get(i).element;
+					HudElementConfig otherConfig = getElementConfig(other);
+					if(other == element) break;
+					if(otherConfig.enabled && (otherConfig.anchor == HudElementConfig.Anchor.TOP_LEFT
+							&& anchor == HudElementConfig.Anchor.TOP_LEFT
+							|| otherConfig.anchor == HudElementConfig.Anchor.TOP_RIGHT
+							&& anchor == HudElementConfig.Anchor.TOP_RIGHT)) {
+						y += getElementHeight(other) + config.layoutSpacing;
+					}
+				}
+				return clamp(y, config.layoutSafeMargin, screenHeight - elementHeight);
+			}
+			if(anchor == HudElementConfig.Anchor.BOTTOM_LEFT || anchor == HudElementConfig.Anchor.BOTTOM_RIGHT) {
+				int y = screenHeight - elementHeight - config.layoutSafeMargin;
+				for(int i = modules.size() - 1; i >= 0; --i) {
+					HudElement other = modules.get(i).element;
+					HudElementConfig otherConfig = getElementConfig(other);
+					if(other == element) break;
+					if(otherConfig.enabled && (otherConfig.anchor == HudElementConfig.Anchor.BOTTOM_LEFT
+							&& anchor == HudElementConfig.Anchor.BOTTOM_LEFT
+							|| otherConfig.anchor == HudElementConfig.Anchor.BOTTOM_RIGHT
+							&& anchor == HudElementConfig.Anchor.BOTTOM_RIGHT)) {
+						y -= getElementHeight(other) + config.layoutSpacing;
+					}
+				}
+				return clamp(y, 0, screenHeight - elementHeight - config.layoutSafeMargin);
+			}
+		}
 		return clamp(resolveY(elementConfig, screenHeight, elementHeight), 0, screenHeight - elementHeight);
 	}
 

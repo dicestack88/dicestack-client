@@ -21,6 +21,25 @@ public final class HudElementConfig {
 	public int offsetX;
 	public int offsetY;
 	public float scale;
+	public boolean appearanceOverride;
+	public final HudAppearanceConfig appearance = HudAppearanceConfig.defaults();
+	public boolean keystrokesWASD = true;
+	public boolean keystrokesSpace = true;
+	public boolean keystrokesShift = true;
+	public boolean keystrokesMouse = true;
+	public boolean keystrokesLabels = true;
+	public boolean keystrokesCPS = false;
+	public int keystrokesKeySize = 18;
+	public int keystrokesSpacing = 2;
+	public int keystrokesPadding = 3;
+	public int keystrokesPressedColor = 0xFF55DDA0;
+	public int keystrokesUnpressedColor = 0xCC1A2633;
+	public boolean cpsLeft = true;
+	public boolean cpsRight = true;
+	public boolean cpsCombined = true;
+	public boolean cpsLabels = true;
+	public boolean cpsPeak = false;
+	public int cpsDisplayDuration = 1000;
 
 	public HudElementConfig() {
 		this(true, Anchor.TOP_LEFT, 0, 0, 1.0f);
@@ -47,6 +66,55 @@ public final class HudElementConfig {
 		result.offsetX = json.optInt("offsetX", defaults.offsetX);
 		result.offsetY = json.optInt("offsetY", defaults.offsetY);
 		result.scale = (float) json.optDouble("scale", defaults.scale);
+		result.appearanceOverride = json.optBoolean("appearanceOverride", defaults.appearanceOverride);
+		JSONObject appearance = json.optJSONObject("appearance");
+		if(appearance != null) {
+			HudAppearanceConfig appearanceDefaults = HudAppearanceConfig.copy(defaults.appearance);
+			result.appearance.preset = HudAppearanceConfig.fromJson(appearance, appearanceDefaults).preset;
+			HudAppearanceConfig parsed = HudAppearanceConfig.fromJson(appearance, appearanceDefaults);
+			JSONObject parsedJson = parsed.toJson();
+			HudAppearanceConfig copied = HudAppearanceConfig.fromJson(parsedJson, result.appearance);
+			result.appearance.preset = copied.preset;
+			result.appearance.backgroundEnabled = copied.backgroundEnabled;
+			result.appearance.gradientEnabled = copied.gradientEnabled;
+			result.appearance.gradientDirection = copied.gradientDirection;
+			result.appearance.gradientStart = copied.gradientStart;
+			result.appearance.gradientEnd = copied.gradientEnd;
+			result.appearance.backgroundOpacity = copied.backgroundOpacity;
+			result.appearance.borderEnabled = copied.borderEnabled;
+			result.appearance.borderThickness = copied.borderThickness;
+			result.appearance.borderColor = copied.borderColor;
+			result.appearance.borderOpacity = copied.borderOpacity;
+			result.appearance.textColor = copied.textColor;
+			result.appearance.textOpacity = copied.textOpacity;
+			result.appearance.accentColor = copied.accentColor;
+			result.appearance.textShadow = copied.textShadow;
+			result.appearance.panelShadow = copied.panelShadow;
+			result.appearance.shadowIntensity = copied.shadowIntensity;
+			result.appearance.padding = copied.padding;
+			result.appearance.spacing = copied.spacing;
+			result.appearance.cornerRadius = copied.cornerRadius;
+			result.appearance.textScale = copied.textScale;
+			result.appearance.textAlignment = copied.textAlignment;
+			result.appearance.rainbowEnabled = copied.rainbowEnabled;
+		}
+		result.keystrokesWASD = json.optBoolean("keystrokesWASD", defaults.keystrokesWASD);
+		result.keystrokesSpace = json.optBoolean("keystrokesSpace", defaults.keystrokesSpace);
+		result.keystrokesShift = json.optBoolean("keystrokesShift", defaults.keystrokesShift);
+		result.keystrokesMouse = json.optBoolean("keystrokesMouse", defaults.keystrokesMouse);
+		result.keystrokesLabels = json.optBoolean("keystrokesLabels", defaults.keystrokesLabels);
+		result.keystrokesCPS = json.optBoolean("keystrokesCPS", defaults.keystrokesCPS);
+		result.keystrokesKeySize = Math.max(12, Math.min(32, json.optInt("keystrokesKeySize", defaults.keystrokesKeySize)));
+		result.keystrokesSpacing = Math.max(0, Math.min(10, json.optInt("keystrokesSpacing", defaults.keystrokesSpacing)));
+		result.keystrokesPadding = Math.max(0, Math.min(12, json.optInt("keystrokesPadding", defaults.keystrokesPadding)));
+		result.keystrokesPressedColor = json.optInt("keystrokesPressedColor", defaults.keystrokesPressedColor);
+		result.keystrokesUnpressedColor = json.optInt("keystrokesUnpressedColor", defaults.keystrokesUnpressedColor);
+		result.cpsLeft = json.optBoolean("cpsLeft", defaults.cpsLeft);
+		result.cpsRight = json.optBoolean("cpsRight", defaults.cpsRight);
+		result.cpsCombined = json.optBoolean("cpsCombined", defaults.cpsCombined);
+		result.cpsLabels = json.optBoolean("cpsLabels", defaults.cpsLabels);
+		result.cpsPeak = json.optBoolean("cpsPeak", defaults.cpsPeak);
+		result.cpsDisplayDuration = Math.max(250, Math.min(5000, json.optInt("cpsDisplayDuration", defaults.cpsDisplayDuration)));
 		if(result.scale < 0.5f) {
 			result.scale = 0.5f;
 		}else if(result.scale > 3.0f) {
@@ -62,6 +130,25 @@ public final class HudElementConfig {
 		json.put("offsetX", offsetX);
 		json.put("offsetY", offsetY);
 		json.put("scale", scale);
+		json.put("appearanceOverride", appearanceOverride);
+		json.put("appearance", appearance.toJson());
+		json.put("keystrokesWASD", keystrokesWASD);
+		json.put("keystrokesSpace", keystrokesSpace);
+		json.put("keystrokesShift", keystrokesShift);
+		json.put("keystrokesMouse", keystrokesMouse);
+		json.put("keystrokesLabels", keystrokesLabels);
+		json.put("keystrokesCPS", keystrokesCPS);
+		json.put("keystrokesKeySize", keystrokesKeySize);
+		json.put("keystrokesSpacing", keystrokesSpacing);
+		json.put("keystrokesPadding", keystrokesPadding);
+		json.put("keystrokesPressedColor", keystrokesPressedColor);
+		json.put("keystrokesUnpressedColor", keystrokesUnpressedColor);
+		json.put("cpsLeft", cpsLeft);
+		json.put("cpsRight", cpsRight);
+		json.put("cpsCombined", cpsCombined);
+		json.put("cpsLabels", cpsLabels);
+		json.put("cpsPeak", cpsPeak);
+		json.put("cpsDisplayDuration", cpsDisplayDuration);
 		return json;
 	}
 

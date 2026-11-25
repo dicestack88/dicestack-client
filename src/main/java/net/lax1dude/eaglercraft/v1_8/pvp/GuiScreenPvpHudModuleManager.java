@@ -10,6 +10,7 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudModuleInfo;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
@@ -23,6 +24,8 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private static final int BUTTON_SCALE_DOWN = 7;
 	private static final int BUTTON_SCALE_UP = 8;
 	private static final int BUTTON_CATEGORY_BASE = 20;
+	private static final int BUTTON_APPEARANCE_OVERRIDE = 9;
+	private static final int BUTTON_THEME_PRESET = 10;
 
 	private final PvpClient pvpClient;
 	private final List<HudModuleInfo> filteredModules = new ArrayList<>();
@@ -73,6 +76,8 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		int sideX = panelX + listWidth + 26;
 		buttonList.add(new GuiButton(BUTTON_SCALE_DOWN, sideX, listY + 116, 40, 20, "-"));
 		buttonList.add(new GuiButton(BUTTON_SCALE_UP, sideX + 46, listY + 116, 40, 20, "+"));
+		buttonList.add(new GuiButton(BUTTON_APPEARANCE_OVERRIDE, sideX, listY + 176, 86, 20, "Appearance"));
+		buttonList.add(new GuiButton(BUTTON_THEME_PRESET, sideX, listY + 200, 86, 20, "Preset"));
 		buttonList.add(previousButton = new GuiButton(BUTTON_PREVIOUS, listX, panelY + panelHeight - 88, 52, 20, "<"));
 		buttonList.add(nextButton = new GuiButton(BUTTON_NEXT, listX + 58, panelY + panelHeight - 88, 52, 20, ">"));
 		int footerY = panelY + panelHeight - 30;
@@ -184,6 +189,24 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 			break;
 		case BUTTON_DONE:
 			closeManager();
+			break;
+		case BUTTON_APPEARANCE_OVERRIDE:
+			if(selectedModule != null) {
+				HudElementConfig selected = pvpClient.getHudManager().getElementConfig(selectedModule.element);
+				selected.appearanceOverride = !selected.appearanceOverride;
+				pvpClient.getConfigStore().markDirty();
+			}
+			break;
+		case BUTTON_THEME_PRESET:
+			if(selectedModule != null) {
+				HudElementConfig selected = pvpClient.getHudManager().getElementConfig(selectedModule.element);
+				HudAppearanceConfig style = selected.appearanceOverride
+						? selected.appearance : pvpClient.getConfigStore().getConfig().appearance;
+				style.applyPreset(style.preset == HudAppearanceConfig.Preset.MODERN_GLASS
+						? HudAppearanceConfig.Preset.MINIMAL_COMPETITIVE
+						: HudAppearanceConfig.Preset.MODERN_GLASS);
+				pvpClient.getConfigStore().markDirty();
+			}
 			break;
 		}
 		updatePagingButtons();

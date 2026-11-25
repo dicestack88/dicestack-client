@@ -6,16 +6,21 @@ import java.util.Map;
 import org.json.JSONObject;
 
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElementConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class PvpConfig {
 
-	public static final int CONFIG_VERSION = 2;
+	public static final int CONFIG_VERSION = 3;
 
 	public boolean enabled = true;
 	public boolean hudEnabled = true;
 	public final Map<String, HudElementConfig> elements = new LinkedHashMap<>();
 	private int loadedVersion;
 	private boolean needsMigration;
+	public final HudAppearanceConfig appearance = HudAppearanceConfig.defaults();
+	public boolean automaticLayout = false;
+	public int layoutSpacing = 4;
+	public int layoutSafeMargin = 4;
 
 	public PvpConfig() {
 		elements.put("fps", new HudElementConfig(true, HudElementConfig.Anchor.TOP_LEFT, 5, 5, 1.0f));
@@ -64,6 +69,25 @@ public final class PvpConfig {
 		destination.offsetX = source.offsetX;
 		destination.offsetY = source.offsetY;
 		destination.scale = source.scale;
+		destination.appearanceOverride = source.appearanceOverride;
+		copyAppearance(destination.appearance, source.appearance);
+		destination.keystrokesWASD = source.keystrokesWASD;
+		destination.keystrokesSpace = source.keystrokesSpace;
+		destination.keystrokesShift = source.keystrokesShift;
+		destination.keystrokesMouse = source.keystrokesMouse;
+		destination.keystrokesLabels = source.keystrokesLabels;
+		destination.keystrokesCPS = source.keystrokesCPS;
+		destination.keystrokesKeySize = source.keystrokesKeySize;
+		destination.keystrokesSpacing = source.keystrokesSpacing;
+		destination.keystrokesPadding = source.keystrokesPadding;
+		destination.keystrokesPressedColor = source.keystrokesPressedColor;
+		destination.keystrokesUnpressedColor = source.keystrokesUnpressedColor;
+		destination.cpsLeft = source.cpsLeft;
+		destination.cpsRight = source.cpsRight;
+		destination.cpsCombined = source.cpsCombined;
+		destination.cpsLabels = source.cpsLabels;
+		destination.cpsPeak = source.cpsPeak;
+		destination.cpsDisplayDuration = source.cpsDisplayDuration;
 	}
 
 	public int getLoadedVersion() {
@@ -100,6 +124,15 @@ public final class PvpConfig {
 				}
 			}
 		}
+		JSONObject appearance = root.optJSONObject("appearance");
+		if(appearance != null) {
+			HudAppearanceConfig defaults = HudAppearanceConfig.defaults();
+			HudAppearanceConfig parsed = HudAppearanceConfig.fromJson(appearance, defaults);
+			copyAppearance(config.appearance, parsed);
+		}
+		config.automaticLayout = root.optBoolean("automaticLayout", false);
+		config.layoutSpacing = Math.max(0, Math.min(32, root.optInt("layoutSpacing", 4)));
+		config.layoutSafeMargin = Math.max(0, Math.min(32, root.optInt("layoutSafeMargin", 4)));
 		return config;
 	}
 
@@ -122,12 +155,44 @@ public final class PvpConfig {
 		root.put("version", CONFIG_VERSION);
 		root.put("enabled", enabled);
 		root.put("hudEnabled", hudEnabled);
+		root.put("appearance", appearance.toJson());
+		root.put("automaticLayout", automaticLayout);
+		root.put("layoutSpacing", layoutSpacing);
+		root.put("layoutSafeMargin", layoutSafeMargin);
 		JSONObject elementsObject = new JSONObject();
 		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
 			elementsObject.put(entry.getKey(), entry.getValue().toJson());
 		}
 		root.put("elements", elementsObject);
 		return root;
+	}
+
+	private static void copyAppearance(HudAppearanceConfig destination, HudAppearanceConfig source) {
+		JSONObject json = source.toJson();
+		HudAppearanceConfig copied = HudAppearanceConfig.fromJson(json, destination);
+		destination.preset = copied.preset;
+		destination.backgroundEnabled = copied.backgroundEnabled;
+		destination.gradientEnabled = copied.gradientEnabled;
+		destination.gradientDirection = copied.gradientDirection;
+		destination.gradientStart = copied.gradientStart;
+		destination.gradientEnd = copied.gradientEnd;
+		destination.backgroundOpacity = copied.backgroundOpacity;
+		destination.borderEnabled = copied.borderEnabled;
+		destination.borderThickness = copied.borderThickness;
+		destination.borderColor = copied.borderColor;
+		destination.borderOpacity = copied.borderOpacity;
+		destination.textColor = copied.textColor;
+		destination.textOpacity = copied.textOpacity;
+		destination.accentColor = copied.accentColor;
+		destination.textShadow = copied.textShadow;
+		destination.panelShadow = copied.panelShadow;
+		destination.shadowIntensity = copied.shadowIntensity;
+		destination.padding = copied.padding;
+		destination.spacing = copied.spacing;
+		destination.cornerRadius = copied.cornerRadius;
+		destination.textScale = copied.textScale;
+		destination.textAlignment = copied.textAlignment;
+		destination.rainbowEnabled = copied.rainbowEnabled;
 	}
 
 }

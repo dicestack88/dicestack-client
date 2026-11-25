@@ -3,6 +3,7 @@ package net.lax1dude.eaglercraft.v1_8.pvp.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.lax1dude.eaglercraft.v1_8.pvp.PvpRuntime;
+import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 
 public final class PvpContext {
 
@@ -10,6 +11,7 @@ public final class PvpContext {
 	public ScaledResolution resolution;
 	public float partialTicks;
 	public PvpRuntime runtime;
+	public PvpConfig config;
 
 	public PvpContext(Minecraft minecraft, ScaledResolution resolution, float partialTicks, PvpRuntime runtime) {
 		update(minecraft, resolution, partialTicks, runtime);

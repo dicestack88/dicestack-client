@@ -9,11 +9,12 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudManager;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private static final int PANEL_WIDTH = 138;
-	private static final int PANEL_HEIGHT = 164;
+	private static final int PANEL_HEIGHT = 232;
 
 	private final PvpClient pvpClient;
 	private ScaledResolution resolution;
@@ -52,6 +53,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		buttonList.add(new GuiButton(4, panelX + 6, panelY + 88, PANEL_WIDTH - 12, 20, "Reset Selected"));
 		buttonList.add(new GuiButton(5, panelX + 6, panelY + 112, PANEL_WIDTH - 12, 20, "Reset All"));
 		buttonList.add(new GuiButton(6, panelX + 6, panelY + 136, PANEL_WIDTH - 12, 20, "Done"));
+		buttonList.add(new GuiButton(7, panelX + 6, panelY + 160, PANEL_WIDTH - 12, 20, ""));
+		buttonList.add(new GuiButton(8, panelX + 6, panelY + 184, 38, 20, "BG"));
+		buttonList.add(new GuiButton(9, panelX + PANEL_WIDTH - 44, panelY + 184, 38, 20, "Border"));
+		buttonList.add(new GuiButton(10, panelX + 6, panelY + 208, PANEL_WIDTH - 12, 20, ""));
 		updateControls();
 		pvpClient.getHudManager().renderEditor(resolution, 0.0f, pvpClient.getRuntime());
 	}
@@ -128,6 +133,27 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		case 6:
 			closeEditor();
 			return;
+		case 7:
+			elementConfig.appearanceOverride = !elementConfig.appearanceOverride;
+			store.markDirty();
+			break;
+		case 8:
+			HudAppearanceConfig style = elementConfig.appearanceOverride ? elementConfig.appearance : config.appearance;
+			style.backgroundEnabled = !style.backgroundEnabled;
+			store.markDirty();
+			break;
+		case 9:
+			HudAppearanceConfig borderStyle = elementConfig.appearanceOverride ? elementConfig.appearance : config.appearance;
+			borderStyle.borderEnabled = !borderStyle.borderEnabled;
+			store.markDirty();
+			break;
+		case 10:
+			HudAppearanceConfig presetStyle = elementConfig.appearanceOverride ? elementConfig.appearance : config.appearance;
+			presetStyle.applyPreset(presetStyle.preset == HudAppearanceConfig.Preset.MODERN_GLASS
+					? HudAppearanceConfig.Preset.MINIMAL_COMPETITIVE
+					: HudAppearanceConfig.Preset.MODERN_GLASS);
+			store.markDirty();
+			break;
 		default:
 			return;
 		}
@@ -145,6 +171,15 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		visibilityText = "Visible: " + (elementConfig.enabled ? "Yes" : "No");
 		visibilityButton.displayString = elementConfig.enabled ? "Hide Element" : "Show Element";
 		scaleText = "Scale: " + elementConfig.scale + "x";
+		((GuiButton) buttonList.get(6)).displayString =
+				elementConfig.appearanceOverride ? "Use Global Appearance" : "Override Appearance";
+		HudAppearanceConfig style = elementConfig.appearanceOverride ? elementConfig.appearance : configAppearance();
+		((GuiButton) buttonList.get(9)).displayString =
+				"Preset: " + (style.preset == HudAppearanceConfig.Preset.MODERN_GLASS ? "Modern Glass" : "Minimal");
+	}
+
+	private HudAppearanceConfig configAppearance() {
+		return pvpClient.getConfigStore().getConfig().appearance;
 	}
 
 	@Override
