@@ -23,6 +23,7 @@ import net.lax1dude.eaglercraft.v1_8.touch_gui.TouchControls;
 import net.lax1dude.eaglercraft.v1_8.touch_gui.TouchOverlayRenderer;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.minecraft.client.gui.inventory.GuiInventory;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -147,12 +148,16 @@ public class GuiIngame extends Gui {
 		GlStateManager.disableLighting();
 
 		ItemStack itemstack = this.mc.thePlayer.inventory.armorItemInSlot(3);
-		if (this.mc.gameSettings.thirdPersonView == 0 && itemstack != null
+		if (!PvpClient.isOverlayHidden(PvpClient.getInstance() != null
+				&& PvpClient.getInstance().getConfigStore().getConfig().hidePumpkinOverlay)
+				&& this.mc.gameSettings.thirdPersonView == 0 && itemstack != null
 				&& itemstack.getItem() == Item.getItemFromBlock(Blocks.pumpkin)) {
 			this.renderPumpkinOverlay(scaledresolution);
 		}
 
-		if (!this.mc.thePlayer.isPotionActive(Potion.confusion)) {
+		if (!PvpClient.isOverlayHidden(PvpClient.getInstance() != null
+				&& PvpClient.getInstance().getConfigStore().getConfig().hidePortalOverlay)
+				&& !this.mc.thePlayer.isPotionActive(Potion.confusion)) {
 			float f = this.mc.thePlayer.prevTimeInPortal
 					+ (this.mc.thePlayer.timeInPortal - this.mc.thePlayer.prevTimeInPortal) * partialTicks;
 			if (f > 0.0F) {
@@ -311,7 +316,10 @@ public class GuiIngame extends Gui {
 		j -= (this.mc.displayHeight - (Display.getVisualViewportX() + Display.getVisualViewportH())) * j
 				/ this.mc.displayHeight;
 		GlStateManager.translate(0.0F, (float) (j - 48), 0.0F);
-		this.persistantChatGUI.drawChat(this.updateCounter);
+		if (!PvpClient.isOverlayHidden(PvpClient.getInstance() != null
+				&& PvpClient.getInstance().getConfigStore().getConfig().hideChat)) {
+			this.persistantChatGUI.drawChat(this.updateCounter);
+		}
 		GlStateManager.popMatrix();
 		scoreobjective1 = scoreboard.getObjectiveInDisplaySlot(0);
 		if (!this.mc.gameSettings.keyBindPlayerList.isKeyDown() || this.mc.isIntegratedServerRunning()
@@ -333,6 +341,10 @@ public class GuiIngame extends Gui {
 
 	public void renderGameOverlayCrosshairs(int scaledResWidth, int scaledResHeight) {
 		if (this.showCrosshair()) {
+			if (this.mc.getPvpClient() != null
+					&& this.mc.getPvpClient().renderCustomCrosshair(scaledResWidth, scaledResHeight)) {
+				return;
+			}
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			this.mc.getTextureManager().bindTexture(icons);
 			GlStateManager.enableBlend();

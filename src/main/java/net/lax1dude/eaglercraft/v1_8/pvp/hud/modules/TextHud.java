@@ -7,6 +7,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.BlockPos;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.init.Items;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
@@ -25,7 +32,17 @@ public final class TextHud implements HudElement {
 		HELD_DURABILITY,
 		ARMOR_DURABILITY,
 		SERVER_ADDRESS,
-		GAME_MODE
+		GAME_MODE,
+		POTION_EFFECTS,
+		SATURATION,
+		ARROW_COUNT,
+		SPRINT_STATUS,
+		SNEAK_STATUS,
+		TARGET,
+		BLOCK_INFO,
+		DAY_COUNTER,
+		LIGHT_LEVEL,
+		LOW_HEALTH
 	}
 
 	private final Minecraft minecraft;
@@ -42,6 +59,22 @@ public final class TextHud implements HudElement {
 	private int cachedWidth;
 	private boolean cachedClock24Hour;
 	private boolean cachedClockSeconds;
+	private long cachedPotionSecond = Long.MIN_VALUE;
+	private WorldClient cachedPotionWorld;
+	private int cachedLowHealthThreshold = Integer.MIN_VALUE;
+	private Entity cachedTarget;
+	private String cachedTargetName;
+	private int cachedTargetHealth = Integer.MIN_VALUE;
+	private WorldClient cachedBlockWorld;
+	private int cachedBlockX = Integer.MIN_VALUE;
+	private int cachedBlockY = Integer.MIN_VALUE;
+	private int cachedBlockZ = Integer.MIN_VALUE;
+	private String cachedBlockName;
+	private WorldClient cachedLightWorld;
+	private int cachedLightX = Integer.MIN_VALUE;
+	private int cachedLightY = Integer.MIN_VALUE;
+	private int cachedLightZ = Integer.MIN_VALUE;
+	private BlockPos cachedLightPosition;
 
 	public TextHud(Minecraft minecraft, String id, Type type) {
 		this.minecraft = minecraft;
@@ -213,6 +246,13 @@ public final class TextHud implements HudElement {
 			}
 			break;
 		case SERVER_ADDRESS:
+			if(context.config.hideServerAddress) {
+				if(!"Private".equals(cachedDetail)) {
+					cachedDetail = "Private";
+					setText("Server: Private");
+				}
+				break;
+			}
 			String address;
 			if(minecraft.getCurrentServerData() != null) {
 				address = minecraft.getCurrentServerData().serverIP;
@@ -237,7 +277,167 @@ public final class TextHud implements HudElement {
 				setText("Game Mode: " + mode);
 			}
 			break;
+		case POTION_EFFECTS:
+			refreshPotionEffects(context);
+			break;
+		case SATURATION:
+			float saturation = minecraft.thePlayer.getFoodStats().getSaturationLevel();
+			int saturationTenths = Math.round(saturation * 10.0f);
+			if(saturationTenths != cachedValue) {
+				cachedValue = saturationTenths;
+				setText("Saturation: " + saturationTenths / 10.0f);
+			}
+			break;
+		case ARROW_COUNT:
+			int arrows = 0;
+			for(int i = 0; i < minecraft.thePlayer.inventory.mainInventory.length; ++i) {
+				ItemStack item = minecraft.thePlayer.inventory.mainInventory[i];
+				if(item != null && item.getItem() == Items.arrow) {
+					arrows += item.stackSize;
+				}
+			}
+			if(arrows != cachedValue) {
+				cachedValue = arrows;
+				setText("Arrows: " + arrows);
+			}
+			break;
+		case SPRINT_STATUS:
+			boolean sprinting = minecraft.thePlayer.isSprinting();
+			if((sprinting ? 1 : 0) != cachedValue) {
+				cachedValue = sprinting ? 1 : 0;
+				setText("Sprint: " + (sprinting ? "On" : "Off"));
+			}
+			break;
+		case SNEAK_STATUS:
+			boolean sneaking = minecraft.thePlayer.isSneaking();
+			if((sneaking ? 1 : 0) != cachedValue) {
+				cachedValue = sneaking ? 1 : 0;
+				setText("Sneak: " + (sneaking ? "On" : "Off"));
+			}
+			break;
+		case TARGET:
+			Entity target = minecraft.objectMouseOver != null
+					&& minecraft.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY
+							? minecraft.objectMouseOver.entityHit : null;
+			if(target != cachedTarget) {
+				cachedTarget = target;
+				cachedTargetName = null;
+				cachedTargetHealth = Integer.MIN_VALUE;
+			}
+			if(target == null) {
+				if(!"Target: None".equals(cachedText)) {
+					setText("Target: None");
+				}
+			}else {
+				String targetName = target.getName();
+				int targetHealth = target instanceof EntityLivingBase
+						? Math.round(((EntityLivingBase) target).getHealth() * 10.0f) : Integer.MIN_VALUE;
+				if(!targetName.equals(cachedTargetName) || targetHealth != cachedTargetHealth) {
+					cachedTargetName = targetName;
+					cachedTargetHealth = targetHealth;
+					setText(targetHealth == Integer.MIN_VALUE ? "Target: " + targetName
+							: "Target: " + targetName + " " + (targetHealth / 10.0f) + " HP");
+				}
+			}
+			break;
+		case BLOCK_INFO:
+			if(minecraft.objectMouseOver != null
+					&& minecraft.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK
+					&& minecraft.theWorld != null) {
+				BlockPos pos = minecraft.objectMouseOver.getBlockPos();
+				int blockX = pos.getX();
+				int blockY = pos.getY();
+				int blockZ = pos.getZ();
+				String blockName = minecraft.theWorld.getBlockState(pos).getBlock().getLocalizedName();
+				if(minecraft.theWorld != cachedBlockWorld || blockX != cachedBlockX || blockY != cachedBlockY
+						|| blockZ != cachedBlockZ || !blockName.equals(cachedBlockName)) {
+					cachedBlockWorld = minecraft.theWorld;
+					cachedBlockX = blockX;
+					cachedBlockY = blockY;
+					cachedBlockZ = blockZ;
+					cachedBlockName = blockName;
+					setText("Block: " + blockName + " " + blockX + " " + blockY + " " + blockZ);
+				}
+			}else if(!"Block: None".equals(cachedText)) {
+				cachedBlockWorld = null;
+				cachedBlockName = null;
+				setText("Block: None");
+			}
+			break;
+		case DAY_COUNTER:
+			long day = minecraft.theWorld == null ? 0L : Math.max(0L, minecraft.theWorld.getWorldTime() / 24000L) + 1L;
+			if(day != cachedValue) {
+				cachedValue = day;
+				setText("Day: " + day);
+			}
+			break;
+		case LIGHT_LEVEL:
+			int lightX = (int) Math.floor(minecraft.thePlayer.posX);
+			int lightY = (int) Math.floor(minecraft.thePlayer.posY);
+			int lightZ = (int) Math.floor(minecraft.thePlayer.posZ);
+			if(minecraft.theWorld != cachedLightWorld || lightX != cachedLightX || lightY != cachedLightY
+					|| lightZ != cachedLightZ) {
+				cachedLightWorld = minecraft.theWorld;
+				cachedLightX = lightX;
+				cachedLightY = lightY;
+				cachedLightZ = lightZ;
+				cachedLightPosition = new BlockPos(lightX, lightY, lightZ);
+			}
+			int light = minecraft.theWorld == null ? 0 : minecraft.theWorld.getLightFromNeighbors(cachedLightPosition);
+			if(light != cachedValue) {
+				cachedValue = light;
+				setText("Light: " + light + "/15");
+			}
+			break;
+		case LOW_HEALTH:
+			int healthPercent = Math.round(minecraft.thePlayer.getHealth() * 10.0f);
+			int thresholdTenths = Math.round(context.config.lowHealthThreshold * 10.0f);
+			if(healthPercent != cachedValue || thresholdTenths != cachedLowHealthThreshold) {
+				cachedValue = healthPercent;
+				cachedLowHealthThreshold = thresholdTenths;
+				setText(healthPercent <= thresholdTenths ? "LOW HEALTH: " + healthPercent / 10.0f : "Health OK");
+			}
+			break;
 		}
+	}
+
+	private void refreshPotionEffects(PvpContext context) {
+		long second = context.minecraft.theWorld == null ? 0L : context.minecraft.theWorld.getTotalWorldTime() / 20L;
+		if(context.minecraft.theWorld == cachedPotionWorld && second == cachedPotionSecond) {
+			return;
+		}
+		cachedPotionWorld = context.minecraft.theWorld;
+		cachedPotionSecond = second;
+		StringBuilder text = new StringBuilder("Effects: ");
+		java.util.List<PotionEffect> effects = minecraft.thePlayer.getActivePotionEffectsList();
+		if(effects.isEmpty()) {
+			text.append("None");
+		}else {
+			int shown = 0;
+			for(int i = 0; i < effects.size() && shown < 3; ++i) {
+				PotionEffect effect = effects.get(i);
+				int id = effect.getPotionID();
+				if(id < 0 || id >= Potion.potionTypes.length || Potion.potionTypes[id] == null) {
+					continue;
+				}
+				if(shown++ > 0) {
+					text.append(", ");
+				}
+				text.append(I18n.format(effect.getEffectName()));
+				if(effect.getAmplifier() > 0) {
+					text.append(" ").append(effect.getAmplifier() + 1);
+				}
+				int totalSeconds = Math.max(0, effect.getDuration() / 20);
+				text.append(" ").append(totalSeconds / 60).append(":")
+						.append(totalSeconds % 60 < 10 ? "0" : "").append(totalSeconds % 60);
+			}
+			if(shown == 0) {
+				text.append("None");
+			}else if(effects.size() > 3) {
+				text.append(" +").append(effects.size() - 3);
+			}
+		}
+		setText(text.toString());
 	}
 
 	private void refreshDurability(ItemStack stack, String label) {

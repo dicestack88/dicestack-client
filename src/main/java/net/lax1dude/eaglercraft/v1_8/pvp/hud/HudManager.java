@@ -63,6 +63,26 @@ public final class HudManager {
 				HudModuleInfo.Category.WORLD);
 		register(new TextHud(minecraft, "game_mode", TextHud.Type.GAME_MODE), "Current Game Mode",
 				HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "potion_effects", TextHud.Type.POTION_EFFECTS), "Potion Effects",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "saturation", TextHud.Type.SATURATION), "Saturation",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "arrow_count", TextHud.Type.ARROW_COUNT), "Arrow Counter",
+				HudModuleInfo.Category.PVP);
+		register(new TextHud(minecraft, "sprint_status", TextHud.Type.SPRINT_STATUS), "Sprint Status",
+				HudModuleInfo.Category.CORE);
+		register(new TextHud(minecraft, "sneak_status", TextHud.Type.SNEAK_STATUS), "Sneak Status",
+				HudModuleInfo.Category.CORE);
+		register(new TextHud(minecraft, "target", TextHud.Type.TARGET), "Target HUD",
+				HudModuleInfo.Category.PVP);
+		register(new TextHud(minecraft, "block_info", TextHud.Type.BLOCK_INFO), "Block Information",
+				HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "day_counter", TextHud.Type.DAY_COUNTER), "Day Counter",
+				HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "light_level", TextHud.Type.LIGHT_LEVEL), "Light Level",
+				HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "low_health", TextHud.Type.LOW_HEALTH), "Low Health Warning",
+				HudModuleInfo.Category.PLAYER);
 	}
 
 	private void register(HudElement element, String name, HudModuleInfo.Category category) {

@@ -11,6 +11,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.minecraft.client.entity.AbstractClientPlayer;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
@@ -392,7 +393,9 @@ public class ItemRenderer {
 				this.renderWaterOverlayTexture(partialTicks);
 			}
 
-			if (this.mc.thePlayer.isBurning()) {
+			if (this.mc.thePlayer.isBurning()
+					&& !PvpClient.isOverlayHidden(PvpClient.getInstance() != null
+							&& PvpClient.getInstance().getConfigStore().getConfig().hideFireOverlay)) {
 				this.renderFireInFirstPerson(partialTicks);
 			}
 		}

@@ -4,9 +4,11 @@ import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfigStore;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudManager;
+import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.multiplayer.GuiConnecting;
 import net.minecraft.client.multiplayer.ServerData;
@@ -16,6 +18,8 @@ import net.minecraft.util.MathHelper;
 public final class PvpClient {
 
 	private static PvpClient instance;
+	private static final int[] CIRCLE_X = { 0, 1, 2, 2, 2, 1, 0, -1, -2, -2, -2, -1 };
+	private static final int[] CIRCLE_Y = { -2, -2, -1, 0, 1, 2, 2, 2, 1, 0, -1, -2 };
 
 	private final Minecraft minecraft;
 	private final PvpConfigStore configStore;
@@ -129,6 +133,101 @@ public final class PvpClient {
 		PvpClient client = instance;
 		return client != null && client.configStore.getConfig().enabled
 				&& client.configStore.getConfig().toggleSprintEnabled && client.sprintToggled;
+	}
+
+	public static boolean isNoDynamicFovEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().noDynamicFov;
+	}
+
+	public static boolean isNoHurtTiltEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().noHurtTilt;
+	}
+
+	public static boolean isNoFogEnabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().noFog;
+	}
+
+	public static boolean isWeatherHidden() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().hideWeather;
+	}
+
+	public static boolean isVignetteHidden() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().hideVignette;
+	}
+
+	public static boolean isOverlayHidden(boolean configured) {
+		return instance != null && instance.configStore.getConfig().enabled && configured;
+	}
+
+	public static boolean isEntityShadowsDisabled() {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().disableEntityShadows;
+	}
+
+	public static float getEffectiveGamma(float configuredGamma) {
+		return instance != null && instance.configStore.getConfig().enabled
+				&& instance.configStore.getConfig().fullbright ? 16.0f : configuredGamma;
+	}
+
+	public boolean renderCustomCrosshair(int screenWidth, int screenHeight) {
+		PvpConfig config = configStore.getConfig();
+		if(!config.enabled || !config.crosshairEnabled || config.crosshairStyle == PvpConfig.CrosshairStyle.VANILLA) {
+			return false;
+		}
+		if(config.crosshairHideInMenus && minecraft.currentScreen != null
+				|| config.crosshairHideInThirdPerson && minecraft.gameSettings.thirdPersonView != 0) {
+			return true;
+		}
+		int color = config.crosshairColor;
+		if(config.crosshairDynamicColor && minecraft.objectMouseOver != null
+				&& minecraft.objectMouseOver.entityHit != null) {
+			color = 0xFFFF5555;
+		}
+		color = (Math.max(0, Math.min(255, (int) (config.crosshairOpacity * 255.0f))) << 24) | (color & 0x00FFFFFF);
+		int centerX = screenWidth / 2;
+		int centerY = screenHeight / 2;
+		int size = config.crosshairSize;
+		int thickness = config.crosshairThickness;
+		int gap = config.crosshairGap;
+		if(config.crosshairOutline) {
+			int outlineThickness = thickness + 2;
+			drawCrosshairShape(config.crosshairStyle, centerX, centerY, size + 1, outlineThickness,
+					gap, 0xCC000000);
+		}
+		drawCrosshairShape(config.crosshairStyle, centerX, centerY, size, thickness, gap, color);
+		GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
+		return true;
+	}
+
+	private void drawCrosshairShape(PvpConfig.CrosshairStyle style, int centerX, int centerY, int size,
+			int thickness, int gap, int color) {
+		if(style == PvpConfig.CrosshairStyle.DOT || style == PvpConfig.CrosshairStyle.CIRCLE_DOT) {
+			Gui.drawRect(centerX - thickness / 2, centerY - thickness / 2,
+					centerX - thickness / 2 + thickness, centerY - thickness / 2 + thickness, color);
+		}
+		if(style == PvpConfig.CrosshairStyle.CIRCLE || style == PvpConfig.CrosshairStyle.CIRCLE_DOT) {
+			int radius = Math.max(2, size);
+			for(int i = 0; i < CIRCLE_X.length; ++i) {
+				int px = centerX + CIRCLE_X[i] * radius / 2;
+				int py = centerY + CIRCLE_Y[i] * radius / 2;
+				Gui.drawRect(px - thickness / 2, py - thickness / 2,
+						px - thickness / 2 + thickness, py - thickness / 2 + thickness, color);
+			}
+		}else if(style == PvpConfig.CrosshairStyle.CROSS) {
+			Gui.drawRect(centerX - thickness / 2, centerY - gap - size,
+					centerX - thickness / 2 + thickness, centerY - gap, color);
+			Gui.drawRect(centerX - thickness / 2, centerY + gap + 1,
+					centerX - thickness / 2 + thickness, centerY + gap + size + 1, color);
+			Gui.drawRect(centerX - gap - size, centerY - thickness / 2,
+					centerX - gap, centerY - thickness / 2 + thickness, color);
+			Gui.drawRect(centerX + gap + 1, centerY - thickness / 2,
+					centerX + gap + size + 1, centerY - thickness / 2 + thickness, color);
+		}
 	}
 
 	public void recordMouseClick(int button) {
