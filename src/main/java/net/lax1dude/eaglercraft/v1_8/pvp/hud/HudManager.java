@@ -9,6 +9,8 @@ import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.modules.CoordinatesHud;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.modules.CpsHud;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.modules.FpsHud;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.modules.KeystrokesHud;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.modules.TextHud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 
@@ -25,26 +27,51 @@ public final class HudManager {
 
 	private final PvpConfig config;
 	private final Minecraft minecraft;
-	private final List<HudElement> orderedElements = new ArrayList<>();
+	private final List<HudModuleInfo> modules = new ArrayList<>();
 	private final PvpContext context;
 
 	public HudManager(PvpConfig config, Minecraft minecraft) {
 		this.config = config;
 		this.minecraft = minecraft;
 		this.context = new PvpContext(minecraft, null, 0.0f, null);
-		register(new FpsHud(minecraft));
-		register(new CoordinatesHud(minecraft));
-		register(new CpsHud(minecraft));
+		register(new FpsHud(minecraft), "FPS Counter", HudModuleInfo.Category.CORE);
+		register(new CoordinatesHud(minecraft), "Coordinates", HudModuleInfo.Category.CORE);
+		register(new CpsHud(minecraft), "CPS Counter", HudModuleInfo.Category.PVP);
+		register(new KeystrokesHud(minecraft), "Keystrokes", HudModuleInfo.Category.CORE);
+		register(new TextHud(minecraft, "compass", TextHud.Type.COMPASS), "Compass / Direction",
+				HudModuleInfo.Category.CORE);
+		register(new TextHud(minecraft, "speed", TextHud.Type.SPEED), "Speedometer", HudModuleInfo.Category.CORE);
+		register(new TextHud(minecraft, "biome", TextHud.Type.BIOME), "Biome Display", HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "world_clock", TextHud.Type.WORLD_CLOCK), "In-game Clock",
+				HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "session_time", TextHud.Type.SESSION_TIME), "Session Playtime",
+				HudModuleInfo.Category.CORE);
+		register(new TextHud(minecraft, "health", TextHud.Type.HEALTH), "Health Display",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "hunger", TextHud.Type.HUNGER), "Hunger Display",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "armor", TextHud.Type.ARMOR), "Armor Status",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "armor_durability", TextHud.Type.ARMOR_DURABILITY), "Armor Durability",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "held_item", TextHud.Type.HELD_ITEM), "Held Item Display",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "held_durability", TextHud.Type.HELD_DURABILITY), "Held Item Durability",
+				HudModuleInfo.Category.PLAYER);
+		register(new TextHud(minecraft, "server_address", TextHud.Type.SERVER_ADDRESS), "Server Address",
+				HudModuleInfo.Category.WORLD);
+		register(new TextHud(minecraft, "game_mode", TextHud.Type.GAME_MODE), "Current Game Mode",
+				HudModuleInfo.Category.WORLD);
 	}
 
-	private void register(HudElement element) {
-		orderedElements.add(element);
+	private void register(HudElement element, String name, HudModuleInfo.Category category) {
+		modules.add(new HudModuleInfo(element, name, category));
 	}
 
 	public void render(ScaledResolution resolution, float partialTicks, PvpRuntime runtime) {
 		context.update(minecraft, resolution, partialTicks, runtime);
-		for(int i = 0, l = orderedElements.size(); i < l; ++i) {
-			HudElement element = orderedElements.get(i);
+		for(int i = 0, l = modules.size(); i < l; ++i) {
+			HudElement element = modules.get(i).element;
 			if(config.getElement(element.getId()).enabled) {
 				renderElement(element, resolution);
 			}
@@ -53,17 +80,21 @@ public final class HudManager {
 
 	public void renderEditor(ScaledResolution resolution, float partialTicks, PvpRuntime runtime) {
 		context.update(minecraft, resolution, partialTicks, runtime);
-		for(int i = 0, l = orderedElements.size(); i < l; ++i) {
-			renderElement(orderedElements.get(i), resolution);
+		for(int i = 0, l = modules.size(); i < l; ++i) {
+			renderElement(modules.get(i).element, resolution);
 		}
 	}
 
 	public int getElementCount() {
-		return orderedElements.size();
+		return modules.size();
 	}
 
 	public HudElement getElement(int index) {
-		return orderedElements.get(index);
+		return modules.get(index).element;
+	}
+
+	public HudModuleInfo getModuleInfo(int index) {
+		return modules.get(index);
 	}
 
 	public HudElementConfig getElementConfig(HudElement element) {
@@ -93,8 +124,8 @@ public final class HudManager {
 	}
 
 	public HudElement getElementAt(int x, int y, ScaledResolution resolution) {
-		for(int i = orderedElements.size() - 1; i >= 0; --i) {
-			HudElement element = orderedElements.get(i);
+		for(int i = modules.size() - 1; i >= 0; --i) {
+			HudElement element = modules.get(i).element;
 			int elementX = getElementX(element, resolution);
 			int elementY = getElementY(element, resolution);
 			int elementWidth = getElementWidth(element);

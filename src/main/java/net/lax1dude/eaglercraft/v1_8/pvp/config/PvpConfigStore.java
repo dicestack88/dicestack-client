@@ -72,11 +72,17 @@ public final class PvpConfigStore {
 		if(config == null) {
 			return;
 		}
+		if(config.getLoadedVersion() > PvpConfig.CONFIG_VERSION) {
+			logger.warn("Not saving PvP client configuration because its version is newer than this client.");
+			dirty = false;
+			return;
+		}
 		try {
 			JSONObject json = config.toJson();
 			byte[] data = json.toString().getBytes(StandardCharsets.UTF_8);
 			EagRuntime.setStorage(STORAGE_KEY, data);
 			dirty = false;
+			config.markSaved();
 		}catch(Throwable ex) {
 			logger.warn("Could not save PvP client configuration.");
 		}

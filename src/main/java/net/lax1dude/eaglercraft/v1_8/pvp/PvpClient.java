@@ -33,7 +33,7 @@ public final class PvpClient {
 	}
 
 	public void tick() {
-		runtime.tick();
+		runtime.tick(minecraft);
 		configStore.tick();
 	}
 
@@ -51,6 +51,10 @@ public final class PvpClient {
 
 	public void openHudEditor() {
 		minecraft.displayGuiScreen(new GuiScreenPvpHudEditor(this));
+	}
+
+	public void openHudModuleManager() {
+		minecraft.displayGuiScreen(new GuiScreenPvpHudModuleManager(this));
 	}
 
 	public void shutdown() {

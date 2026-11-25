@@ -1455,7 +1455,11 @@ public class Minecraft implements IThreadListener {
 					if (this.currentScreen != null) {
 						this.currentScreen.handleKeyboardInput();
 					} else {
-						while (this.gameSettings.keyBindPvpHudEditor.isPressed()) {
+						if (this.gameSettings.keyBindPvpHudManager.isPressed()) {
+							if (this.theWorld != null && this.thePlayer != null && this.pvpClient != null) {
+								this.pvpClient.openHudModuleManager();
+							}
+						} else if (this.gameSettings.keyBindPvpHudEditor.isPressed()) {
 							if (this.theWorld != null && this.thePlayer != null && this.pvpClient != null) {
 								this.pvpClient.openHudEditor();
 							}
