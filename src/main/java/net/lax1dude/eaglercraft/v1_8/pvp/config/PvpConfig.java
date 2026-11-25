@@ -32,6 +32,26 @@ public final class PvpConfig {
 		return config;
 	}
 
+	public void resetElement(String id) {
+		PvpConfig defaults = new PvpConfig();
+		copyElement(getElement(id), defaults.getElement(id));
+	}
+
+	public void resetElements() {
+		PvpConfig defaults = new PvpConfig();
+		for(Map.Entry<String, HudElementConfig> entry : elements.entrySet()) {
+			copyElement(entry.getValue(), defaults.getElement(entry.getKey()));
+		}
+	}
+
+	private void copyElement(HudElementConfig destination, HudElementConfig source) {
+		destination.enabled = source.enabled;
+		destination.anchor = source.anchor;
+		destination.offsetX = source.offsetX;
+		destination.offsetY = source.offsetY;
+		destination.scale = source.scale;
+	}
+
 	public int getLoadedVersion() {
 		return loadedVersion;
 	}

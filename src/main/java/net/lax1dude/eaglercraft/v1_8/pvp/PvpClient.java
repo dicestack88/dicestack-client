@@ -49,6 +49,10 @@ public final class PvpClient {
 		}
 	}
 
+	public void openHudEditor() {
+		minecraft.displayGuiScreen(new GuiScreenPvpHudEditor(this));
+	}
+
 	public void shutdown() {
 		configStore.saveNow();
 	}
