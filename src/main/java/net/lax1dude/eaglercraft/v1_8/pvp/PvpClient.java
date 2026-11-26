@@ -481,6 +481,10 @@ public final class PvpClient {
 		minecraft.displayGuiScreen(new GuiScreenPvpClientMenu(this, null));
 	}
 
+	public void openClientMenu(GuiScreen parent) {
+		minecraft.displayGuiScreen(new GuiScreenPvpClientMenu(this, parent));
+	}
+
 	public void openQolSettings(GuiScreen parent) {
 		minecraft.displayGuiScreen(new GuiScreenPvpQolSettings(this, parent));
 	}

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Locale;
 
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElement;
-import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElementConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudManager;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
@@ -31,21 +30,18 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 		final String name;
 		final String category;
 		final String description;
-		final String configSearch;
-		final int configPage;
+		final int[] settings;
 		final HudElement hudElement;
 
-		ModEntry(String name, String category, String description, String configSearch, int configPage) {
-			this(name, category, description, configSearch, configPage, null);
+		ModEntry(String name, String category, String description, int... settings) {
+			this(name, category, description, settings, null);
 		}
 
-		ModEntry(String name, String category, String description, String configSearch, int configPage,
-				HudElement hudElement) {
+		ModEntry(String name, String category, String description, int[] settings, HudElement hudElement) {
 			this.name = name;
 			this.category = category;
 			this.description = description;
-			this.configSearch = configSearch;
-			this.configPage = configPage;
+			this.settings = settings;
 			this.hudElement = hudElement;
 		}
 	}
@@ -83,7 +79,8 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 		panelHeight = Math.max(1, Math.min(480, height - 12));
 		panelX = (width - panelWidth) / 2;
 		panelY = (height - panelHeight) / 2;
-		sidebarWidth = panelWidth >= 620 ? 150 : Math.max(96, panelWidth / 4);
+		sidebarWidth = Math.min(Math.max(1, panelWidth - 36),
+				panelWidth >= 620 ? 150 : Math.max(96, panelWidth / 4));
 		contentX = panelX + sidebarWidth + 12;
 		contentWidth = Math.max(1, panelX + panelWidth - 12 - contentX);
 
@@ -95,12 +92,13 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 
 		int sidebarY = panelY + 54;
 		int sidebarGap = 3;
-		int sidebarButtonHeight = Math.min(22, Math.max(14,
-				(panelHeight - 78 - sidebarGap * (CATEGORIES.length - 1)) / CATEGORIES.length));
+		int sidebarButtonHeight = Math.min(22, Math.max(8,
+				(panelHeight - 66 - sidebarGap * (CATEGORIES.length - 1)) / CATEGORIES.length));
 		for(int i = 0; i < CATEGORIES.length; ++i) {
 			PvpGuiButton button = new PvpGuiButton(ID_CATEGORY_BASE + i,
 					panelX + 10, sidebarY + i * (sidebarButtonHeight + sidebarGap),
-					sidebarWidth - 20, sidebarButtonHeight, CATEGORIES[i]);
+					Math.max(1, sidebarWidth - 20), sidebarButtonHeight, CATEGORIES[i]);
+			button.setSelected(CATEGORIES[i].equals(activeCategory));
 			buttonList.add(button);
 		}
 
@@ -116,13 +114,18 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 			ModEntry entry = filteredEntries.get(i);
 			int row = i - start;
 			int rowY = listY + row * 34;
-			PvpToggleButton toggle = new PvpToggleButton(ID_MOD_BASE + allEntries.indexOf(entry),
-					contentX + contentWidth - 58, rowY + 7, 50, 16, isEnabled(entry));
-			buttonList.add(toggle);
+			int buttonId = ID_MOD_BASE + allEntries.indexOf(entry);
+			if(isNavigationEntry(entry)) {
+				buttonList.add(new PvpGuiButton(buttonId, contentX + contentWidth - 58,
+						rowY + 7, 50, 16, "Open"));
+			}else {
+				buttonList.add(new PvpToggleButton(buttonId,
+						contentX + contentWidth - 58, rowY + 7, 50, 16, isEnabled(entry)));
+			}
 		}
 
 		int footerY = panelY + panelHeight - 31;
-		int footerButtonWidth = Math.max(36, Math.min(58, contentWidth / 5));
+		int footerButtonWidth = Math.max(1, Math.min(58, (contentWidth - 8) / 4));
 		buttonList.add(new PvpGuiButton(ID_PREVIOUS, contentX, footerY, footerButtonWidth, 20, "<"));
 		buttonList.add(new PvpGuiButton(ID_NEXT, contentX + footerButtonWidth + 4, footerY,
 				footerButtonWidth, 20, ">"));
@@ -159,6 +162,9 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 					searchField.xPosition + 4, searchField.yPosition + 5, 0xFF758396);
 		}
 		searchField.drawTextBox();
+		String actionHint = "Select a mod to view its settings";
+		actionHint = fontRendererObj.trimStringToWidth(actionHint, Math.max(0, contentWidth - 8));
+		fontRendererObj.drawStringWithShadow(actionHint, contentX + 2, listY - 9, 0xFF8797A8);
 
 		int start = page * visibleRows;
 		int end = Math.min(start + visibleRows, filteredEntries.size());
@@ -217,6 +223,10 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 			int index = button.id - ID_MOD_BASE;
 			if(index >= 0 && index < allEntries.size()) {
 				ModEntry entry = allEntries.get(index);
+				if(isNavigationEntry(entry)) {
+					openEntryConfig(entry);
+					return;
+				}
 				setEnabled(entry, !isEnabled(entry));
 				pvpClient.getConfigStore().markDirty();
 				statusText = entry.name + " " + (isEnabled(entry) ? "enabled" : "disabled");
@@ -247,48 +257,44 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 
 	private void buildEntries() {
 		allEntries.clear();
-		allEntries.add(new ModEntry("Toggle Sprint", "QoL", "Automatically keep sprint active",
-				"Toggle Sprint", 0));
-		allEntries.add(new ModEntry("Toggle Sneak", "QoL", "Keep sneak toggled while walking",
-				"Toggle Sneak", 0));
-		allEntries.add(new ModEntry("Zoom", "Camera", "Configurable camera zoom",
-				"Zoom", 0));
-		allEntries.add(new ModEntry("Freelook", "Camera", "Orbit while preserving movement",
-				"Freelook", 1));
-		allEntries.add(new ModEntry("Custom FOV", "Camera", "Independent field-of-view settings",
-				"FOV", 1));
+		allEntries.add(new ModEntry("Toggle Sprint", "QoL", "Automatically keep sprint active", 1));
+		allEntries.add(new ModEntry("Toggle Sneak", "QoL", "Keep sneak toggled while walking", 2));
+		allEntries.add(new ModEntry("Zoom", "Camera", "Configurable camera zoom", 3, 4, 5, 67));
+		allEntries.add(new ModEntry("Freelook", "Camera", "Orbit while preserving movement", 102, 104, 65));
+		allEntries.add(new ModEntry("Custom FOV", "Camera", "Independent field-of-view settings", 29, 58));
 		allEntries.add(new ModEntry("Crosshair", "Crosshair", "Crosshair style, size and colour",
-				"Crosshair", 4));
+				35, 40, 41, 42, 44, 46, 50, 52, 53, 54, 56, 57));
 		allEntries.add(new ModEntry("Chat", "QoL", "Timestamps, mentions and compact chat",
-				"Chat", 5));
-		allEntries.add(new ModEntry("Streamer Mode", "Privacy", "Hide identifying information",
-				"Streamer", 2));
+				60, 61, 62, 63, 78, 101));
+		allEntries.add(new ModEntry("Streamer Mode", "Privacy", "Hide identifying information", 73));
 		allEntries.add(new ModEntry("Privacy", "Privacy", "Hide chat, addresses and overlays",
-				"Privacy", 2));
-		allEntries.add(new ModEntry("Fullbright", "Visuals", "Increase world visibility",
-				"Fullbright", 1));
+				30, 31, 32, 33, 34, 74, 76));
+		allEntries.add(new ModEntry("Fullbright", "Visuals", "Increase world visibility", 24));
 		allEntries.add(new ModEntry("Fog and Weather", "Visuals", "Environment rendering controls",
-				"Fog", 1));
-		allEntries.add(new ModEntry("Block Outline", "Visuals", "Custom block outline appearance",
-				"Block Outline", 2));
+				22, 23, 70, 71, 72, 69, 100));
+		allEntries.add(new ModEntry("Block Outline", "Visuals", "Custom block outline appearance", 94, 95));
 		allEntries.add(new ModEntry("Held Item", "Visuals", "Scale and offset held items",
-				"Held Item", 2));
-		allEntries.add(new ModEntry("Performance", "Performance", "FPS limit and performance profile",
-				"FPS", 6));
-		allEntries.add(new ModEntry("Notifications", "QoL", "Toggle Dicestack notifications",
-				"Notifications", 2));
-		allEntries.add(new ModEntry("Appearance", "Appearance", "Modern Glass and HUD appearance",
-				"Appearance", -1));
+				86, 88, 90, 92, 97, 99));
+		allEntries.add(new ModEntry("Performance", "Performance", "FPS limit and performance profile", 79, 80));
+		allEntries.add(new ModEntry("Notifications", "QoL", "Toggle Dicestack notifications", 75));
+		allEntries.add(new ModEntry("Appearance", "Appearance", "Modern Glass and HUD appearance"));
 		allEntries.add(new ModEntry("HUD Profiles", "Profiles", "Save and restore complete HUD layouts",
-				"Profiles", -1));
+				new int[0]));
 
 		HudManager manager = pvpClient.getHudManager();
 		for(int i = 0; i < manager.getElementCount(); ++i) {
 			HudElement element = manager.getElement(i);
 			String name = pvpClient.getHudManager().getModuleInfo(i).name;
 			allEntries.add(new ModEntry(name, "HUD", "Position and appearance controls",
-					name, -1, element));
+					getHudSettings(element.getId()), element));
 		}
+	}
+
+	private int[] getHudSettings(String elementId) {
+		if("coordinates".equals(elementId)) return new int[] { 7 };
+		if("world_clock".equals(elementId)) return new int[] { 8, 9 };
+		if("food_info".equals(elementId)) return new int[] { 103 };
+		return new int[0];
 	}
 
 	private void refreshFilteredEntries() {
@@ -313,72 +319,19 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 	}
 
 	private boolean isEnabled(ModEntry entry) {
-		net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig config =
-				pvpClient.getConfigStore().getConfig();
-		if(entry.hudElement != null) {
-			return pvpClient.getHudManager().getElementConfig(entry.hudElement).enabled;
-		}
-		if("Toggle Sprint".equals(entry.name)) return config.toggleSprintEnabled;
-		if("Toggle Sneak".equals(entry.name)) return config.toggleSneakEnabled;
-		if("Zoom".equals(entry.name)) return config.zoomEnabled;
-		if("Freelook".equals(entry.name)) return config.freelookEnabled;
-		if("Custom FOV".equals(entry.name)) return config.customFovEnabled;
-		if("Crosshair".equals(entry.name)) return config.crosshairEnabled;
-		if("Chat".equals(entry.name)) return config.chatTimestamps || config.chatCompact
-				|| config.chatHighlightMentions;
-		if("Streamer Mode".equals(entry.name)) return config.streamerMode;
-		if("Privacy".equals(entry.name)) return config.hideChat || config.hideServerAddress
-				|| config.hideUsername;
-		if("Fullbright".equals(entry.name)) return config.fullbright;
-		if("Fog and Weather".equals(entry.name)) return config.noFog || config.hideWeather;
-		if("Block Outline".equals(entry.name)) return config.blockOutlineEnabled;
-		if("Held Item".equals(entry.name)) return config.heldItemScale != 1.0f
-				|| config.glintEnabled;
-		if("Performance".equals(entry.name)) return config.performanceProfile
-				!= net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig.PerformanceProfile.DEFAULT;
-		if("Notifications".equals(entry.name)) return config.notificationsEnabled;
-		if("Appearance".equals(entry.name)) return true;
-		if("HUD Profiles".equals(entry.name)) return true;
-		return false;
+		return GuiScreenPvpModuleSettings.isModuleEnabled(pvpClient, entry.name, entry.hudElement);
+	}
+
+	private boolean isNavigationEntry(ModEntry entry) {
+		return "Appearance".equals(entry.name) || "HUD Profiles".equals(entry.name)
+				|| "Profiles".equals(entry.category);
 	}
 
 	private void setEnabled(ModEntry entry, boolean enabled) {
-		net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig config =
-				pvpClient.getConfigStore().getConfig();
-		if(entry.hudElement != null) {
-			HudElementConfig element = pvpClient.getHudManager().getElementConfig(entry.hudElement);
-			element.enabled = enabled;
-			return;
-		}
-		if("Toggle Sprint".equals(entry.name)) config.toggleSprintEnabled = enabled;
-		else if("Toggle Sneak".equals(entry.name)) config.toggleSneakEnabled = enabled;
-		else if("Zoom".equals(entry.name)) config.zoomEnabled = enabled;
-		else if("Freelook".equals(entry.name)) config.freelookEnabled = enabled;
-		else if("Custom FOV".equals(entry.name)) config.customFovEnabled = enabled;
-		else if("Crosshair".equals(entry.name)) config.crosshairEnabled = enabled;
-		else if("Chat".equals(entry.name)) config.chatTimestamps = enabled;
-		else if("Streamer Mode".equals(entry.name)) config.streamerMode = enabled;
-		else if("Privacy".equals(entry.name)) {
-			config.hideChat = enabled;
-			config.hideServerAddress = enabled;
-		}else if("Fullbright".equals(entry.name)) config.fullbright = enabled;
-		else if("Fog and Weather".equals(entry.name)) {
-			config.noFog = enabled;
-			config.hideWeather = enabled;
-		}else if("Block Outline".equals(entry.name)) config.blockOutlineEnabled = enabled;
-		else if("Held Item".equals(entry.name)) config.glintEnabled = enabled;
-		else if("Performance".equals(entry.name)) {
-			config.applyPerformanceProfile(enabled
-					? net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig.PerformanceProfile.BALANCED
-					: net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig.PerformanceProfile.DEFAULT);
-		}else if("Notifications".equals(entry.name)) config.notificationsEnabled = enabled;
+		GuiScreenPvpModuleSettings.setModuleEnabled(pvpClient, mc, entry.name, entry.hudElement, enabled);
 	}
 
 	private void openEntryConfig(ModEntry entry) {
-		if(entry.hudElement != null) {
-			mc.displayGuiScreen(new GuiScreenPvpHudEditor(pvpClient, this, entry.hudElement));
-			return;
-		}
 		if("HUD Profiles".equals(entry.name) || "Profiles".equals(entry.category)) {
 			mc.displayGuiScreen(new GuiScreenPvpHudProfiles(pvpClient, this));
 			return;
@@ -387,7 +340,8 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 			pvpClient.openHudEditor(this);
 			return;
 		}
-		pvpClient.openQolSettings(this, entry.configPage, entry.configSearch);
+		mc.displayGuiScreen(new GuiScreenPvpModuleSettings(pvpClient, this, entry.name,
+				entry.description, entry.settings, entry.hudElement));
 	}
 
 	@Override
@@ -414,7 +368,7 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) {
 		searchField.mouseClicked(mouseX, mouseY, button);
-		if(button == 1) {
+		if(button == 1 || button == 0) {
 			int start = page * visibleRows;
 			int end = Math.min(start + visibleRows, filteredEntries.size());
 			for(int i = start; i < end; ++i) {
@@ -422,12 +376,20 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 				int rowY = listY + (i - start) * 34;
 				if(mouseX >= contentX && mouseX < contentX + contentWidth
 						&& mouseY >= rowY && mouseY < rowY + 30) {
+					int toggleX = contentX + contentWidth - 58;
+					if(button == 0 && mouseX >= toggleX && mouseY >= rowY + 7
+							&& mouseY < rowY + 23) {
+						super.mouseClicked(mouseX, mouseY, button);
+						return;
+					}
 					statusText = "";
 					openEntryConfig(entry);
 					return;
 				}
 			}
-			return;
+			if(button == 1) {
+				return;
+			}
 		}
 		super.mouseClicked(mouseX, mouseY, button);
 	}

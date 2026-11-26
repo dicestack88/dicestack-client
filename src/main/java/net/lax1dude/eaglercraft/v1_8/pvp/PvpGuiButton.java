@@ -11,9 +11,14 @@ public class PvpGuiButton extends GuiButton {
 	private String cachedLabelSource;
 	private String cachedVisibleLabel = "";
 	private int cachedLabelLimit = -1;
+	private boolean selected;
 
 	public PvpGuiButton(int buttonId, int x, int y, int width, int height, String text) {
 		super(buttonId, x, y, width, height, text);
+	}
+
+	public void setSelected(boolean selected) {
+		this.selected = selected;
 	}
 
 	@Override
@@ -33,13 +38,14 @@ public class PvpGuiButton extends GuiButton {
 			radius = appearance.cornerRadius;
 			borderColor = HudRenderer.withAlpha(appearance.borderColor, appearance.borderOpacity);
 		}
-		int fill = !enabled ? 0xAA151D28 : hovered ? 0xFF304257 : 0xE51E2B3A;
+		int fill = !enabled ? 0xAA151D28 : hovered ? 0xFF304257
+				: selected ? 0xFF243B3C : 0xE51E2B3A;
 		HudRenderer.drawRoundedRect(xPosition, yPosition, width, height, radius, fill);
 		HudRenderer.drawRoundedBorder(xPosition, yPosition, width, height, radius, 1,
-				!enabled ? 0x66556677 : enabled && hovered ? accent : borderColor);
+				!enabled ? 0x66556677 : selected || hovered ? accent : borderColor);
 		drawRect(xPosition + Math.min(radius, width / 2), yPosition,
 				xPosition + width - Math.min(radius, width / 2), yPosition + 1,
-				enabled ? accent : 0xFF566575);
+				enabled && (selected || hovered) ? accent : 0xFF566575);
 		int textColor = !enabled ? 0xFF84909D : hovered ? 0xFFFFFFFF : 0xFFE0E8EF;
 		drawButtonLabel(PvpUiFontRenderer.get(minecraft), getButtonLabel(), textColor);
 	}

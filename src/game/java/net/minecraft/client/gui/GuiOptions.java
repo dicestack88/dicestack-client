@@ -133,10 +133,10 @@ public class GuiOptions extends GuiScreen implements GuiYesNoCallback, IDicestac
 		this.buttonList.add(btn = new GuiButton(104, this.width / 2 + 5, this.height / 6 + 144 - 6, 150, 20,
 				I18n.format("options.debugConsoleButton", new Object[0])));
 		btn.enabled = EagRuntime.getPlatformType() != EnumPlatformType.DESKTOP;
-		this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 168, 98, 20,
+		this.buttonList.add(new GuiButton(200, this.width / 2 - 155, this.height / 6 + 168, 150, 20,
 				I18n.format("gui.done", new Object[0])));
-		this.buttonList.add(new GuiButton(111, this.width / 2 + 2, this.height / 6 + 168, 98, 20,
-				"Dicestack QoL"));
+		this.buttonList.add(new GuiButton(111, this.width / 2 + 5, this.height / 6 + 168, 150, 20,
+				"Dicestack Mod Menu"));
 	}
 
 	public String func_175355_a(EnumDifficulty parEnumDifficulty) {
@@ -199,7 +199,7 @@ public class GuiOptions extends GuiScreen implements GuiYesNoCallback, IDicestac
 			}
 
 			if (parGuiButton.id == 111 && PvpClient.getInstance() != null) {
-				PvpClient.getInstance().openQolSettings(this);
+				PvpClient.getInstance().openClientMenu(this);
 			}
 
 			if (parGuiButton.id == 8675309) {

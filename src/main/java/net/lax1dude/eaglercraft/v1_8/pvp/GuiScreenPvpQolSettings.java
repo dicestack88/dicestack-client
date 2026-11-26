@@ -2,6 +2,7 @@ package net.lax1dude.eaglercraft.v1_8.pvp;
 
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElement;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.IDicestackBackgroundScreen;
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicestackBackgroundScreen {
+public class GuiScreenPvpQolSettings extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
@@ -29,6 +30,10 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 
 	private final PvpClient pvpClient;
 	private final GuiScreen parent;
+	private final String moduleName;
+	private final String moduleDescription;
+	private final int[] moduleSettingIds;
+	private final HudElement moduleHudElement;
 	private GuiTextField searchField;
 	private String searchText = "";
 	private int panelX;
@@ -43,6 +48,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 	private String searchHint;
 	private String pageLabel;
 	private int searchFieldWidth;
+	private int settingListY;
 
 	public GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent) {
 		this(pvpClient, parent, 0, "");
@@ -51,8 +57,28 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 	public GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent, int initialPage, String initialSearch) {
 		this.pvpClient = pvpClient;
 		this.parent = parent;
+		this.moduleName = null;
+		this.moduleDescription = "";
+		this.moduleSettingIds = new int[0];
+		this.moduleHudElement = null;
 		this.page = Math.max(0, Math.min(PAGES.length - 1, initialPage));
 		this.searchText = initialSearch == null ? "" : initialSearch;
+	}
+
+	protected GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent, String moduleName,
+			String moduleDescription, int[] moduleSettingIds) {
+		this(pvpClient, parent, moduleName, moduleDescription, moduleSettingIds, null);
+	}
+
+	protected GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent, String moduleName,
+			String moduleDescription, int[] moduleSettingIds, HudElement moduleHudElement) {
+		this.pvpClient = pvpClient;
+		this.parent = parent;
+		this.moduleName = moduleName;
+		this.moduleDescription = moduleDescription;
+		this.moduleSettingIds = moduleSettingIds.clone();
+		this.moduleHudElement = moduleHudElement;
+		this.page = 0;
 	}
 
 	@Override
@@ -64,47 +90,77 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 		panelY = Math.max(0, (height - panelHeight) / 2);
 		buttonList.clear();
 		searchFieldWidth = Math.max(1, panelWidth - 16);
-		searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31, searchFieldWidth, 18);
-		searchField.setMaxStringLength(32);
-		searchField.setText(searchText);
+		if(moduleName == null) {
+			searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31,
+					searchFieldWidth, 18);
+			searchField.setMaxStringLength(32);
+			searchField.setText(searchText);
+		}else {
+			searchField = null;
+			buttonList.add(new PvpToggleButton(15, panelX + panelWidth - 65, panelY + 8,
+					52, 18, isModuleEnabled()));
+			if(moduleHudElement != null) {
+				int editWidth = Math.max(1, panelWidth - 20);
+				PvpGuiButton editHud = new PvpGuiButton(16, panelX + 10, panelY + 43,
+						editWidth, 18, isModuleEnabled()
+								? "Edit HUD layout and appearance" : "Enable module to edit HUD layout");
+				editHud.enabled = isModuleEnabled();
+				buttonList.add(editHud);
+			}
+		}
+		settingListY = panelY + (moduleName == null ? 55 : moduleHudElement == null ? 48 : 68);
 		settingsPage = Math.min(settingsPage, getSettingsPageCount() - 1);
-		titleText = fontRendererObj.trimStringToWidth("DICESTACK  /  " + pageTitle(),
-				Math.max(0, panelWidth - 16));
+		titleText = fontRendererObj.trimStringToWidth(moduleName == null
+				? "DICESTACK  /  " + pageTitle()
+				: "DICESTACK  /  " + moduleName.toUpperCase(Locale.ROOT) + " SETTINGS",
+				Math.max(0, panelWidth - (moduleName == null ? 16 : 122)));
 		searchHint = fontRendererObj.trimStringToWidth("Search all settings...",
 				Math.max(0, searchFieldWidth - 8));
 		List<Integer> displayedIds = getDisplayedButtonIds();
 		int rows = (displayedIds.size() + 1) / 2;
 		int footerHeight = Math.min(20, Math.max(1, panelHeight - 1));
 		footerY = panelY + panelHeight - footerHeight - 4;
-		int availableListHeight = Math.max(1, footerY - (panelY + 55) - 4);
+		int availableListHeight = Math.max(1, footerY - settingListY - 4);
 		rowHeight = Math.max(1, Math.min(22,
 				(availableListHeight - Math.max(0, rows - 1) * 2) / Math.max(1, rows)));
 		int gap = 4;
 		int buttonWidth = Math.max(1, (panelWidth - 24 - gap) / 2);
 		int buttonX = panelX + 8;
-		int startY = panelY + 55;
 		for(int i = 0; i < displayedIds.size(); ++i) {
 			int column = i % 2;
 			int row = i / 2;
 			int id = displayedIds.get(i);
 			int x = buttonX + column * (buttonWidth + gap);
-			int y = startY + row * (rowHeight + 2);
+			int y = settingListY + row * (rowHeight + 2);
 			PvpSliderButton slider = createSlider(id, x, y, buttonWidth, rowHeight);
 			buttonList.add(slider == null ? new PvpGuiButton(id, x, y, buttonWidth, rowHeight, getLabel(id)) : slider);
 		}
 		int footerGap = Math.min(4, Math.max(0, (panelWidth - 3) / 6));
-		int footerWidth = Math.max(1, (panelWidth - 16 - footerGap * 2) / 3);
-		buttonList.add(new PvpGuiButton(12, panelX + 8, footerY, footerWidth, footerHeight, "<"));
-		buttonList.add(new PvpGuiButton(13, panelX + 8 + footerWidth + footerGap, footerY, footerWidth,
-				footerHeight, ">"));
-		buttonList.add(new PvpGuiButton(11, panelX + 8 + (footerWidth + footerGap) * 2, footerY,
-				footerWidth, footerHeight, "Done"));
+		if(moduleName == null) {
+			int footerWidth = Math.max(1, (panelWidth - 16 - footerGap * 2) / 3);
+			buttonList.add(new PvpGuiButton(12, panelX + 8, footerY, footerWidth, footerHeight, "<"));
+			buttonList.add(new PvpGuiButton(13, panelX + 8 + footerWidth + footerGap, footerY, footerWidth,
+					footerHeight, ">"));
+			buttonList.add(new PvpGuiButton(11, panelX + 8 + (footerWidth + footerGap) * 2, footerY,
+					footerWidth, footerHeight, "Done"));
+		}else {
+			int footerWidth = Math.max(1, (panelWidth - 16 - footerGap * 3) / 4);
+			buttonList.add(new PvpGuiButton(12, panelX + 8, footerY, footerWidth, footerHeight, "<"));
+			buttonList.add(new PvpGuiButton(13, panelX + 8 + footerWidth + footerGap, footerY,
+					footerWidth, footerHeight, ">"));
+			buttonList.add(new PvpGuiButton(14, panelX + 8 + (footerWidth + footerGap) * 2, footerY,
+					footerWidth, footerHeight, "Reset"));
+			buttonList.add(new PvpGuiButton(11, panelX + 8 + (footerWidth + footerGap) * 3, footerY,
+					footerWidth, footerHeight, "Back"));
+		}
 		pageLabel = (settingsPage + 1) + " / " + getSettingsPageCount();
 	}
 
 	@Override
 	public void updateScreen() {
-		searchField.updateCursorCounter();
+		if(searchField != null) {
+			searchField.updateCursorCounter();
+		}
 	}
 
 	@Override
@@ -112,12 +168,26 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 		drawDefaultBackground();
 		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
 		HudRenderer.drawPanel(appearance, panelX, panelY, panelWidth, panelHeight);
-		drawCenteredString(fontRendererObj, titleText, width / 2, panelY + 9, 0xFFF1F7F5);
-		if(searchField.getText().isEmpty()) {
-			fontRendererObj.drawStringWithShadow(searchHint, searchField.xPosition + 4,
-					searchField.yPosition + 5, 0xFF758396);
+		if(moduleName == null) {
+			drawCenteredString(fontRendererObj, titleText, width / 2, panelY + 9, 0xFFF1F7F5);
+		}else {
+			fontRendererObj.drawStringWithShadow(titleText, panelX + 10, panelY + 9, 0xFFF1F7F5);
+			String toggleLabel = isModuleEnabled() ? "Enabled" : "Disabled";
+			fontRendererObj.drawStringWithShadow(toggleLabel, panelX + panelWidth - 111, panelY + 13,
+					isModuleEnabled() ? 0xFF53D6A3 : 0xFF8A96A3);
 		}
-		searchField.drawTextBox();
+		if(moduleName != null) {
+			String description = fontRendererObj.trimStringToWidth(moduleDescription,
+					Math.max(0, panelWidth - 20));
+			fontRendererObj.drawStringWithShadow(description, panelX + 10, panelY + 25, 0xFF9BA8B8);
+		}
+		if(searchField != null) {
+			if(searchField.getText().isEmpty()) {
+				fontRendererObj.drawStringWithShadow(searchHint, searchField.xPosition + 4,
+						searchField.yPosition + 5, 0xFF758396);
+			}
+			searchField.drawTextBox();
+		}
 		drawCenteredString(fontRendererObj, pageLabel, width / 2,
 				footerY - 10, 0xFF9BA8B8);
 		super.drawScreen(mouseX, mouseY, partialTicks);
@@ -133,10 +203,28 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 		case 11:
 			mc.displayGuiScreen(parent);
 			return;
+		case 14:
+			if(moduleName != null) {
+				resetModuleSettings();
+				initGui();
+			}
+			return;
+		case 15:
+			if(moduleName != null) {
+				setModuleEnabled(!isModuleEnabled());
+				pvpClient.getConfigStore().markDirty();
+				initGui();
+			}
+			return;
+		case 16:
+			if(moduleHudElement != null) {
+				mc.displayGuiScreen(new GuiScreenPvpHudEditor(pvpClient, this, moduleHudElement));
+			}
+			return;
 		case 12:
 			if(settingsPage > 0) {
 				--settingsPage;
-			}else if(searchText.isEmpty()) {
+			}else if(moduleName == null && searchText.isEmpty()) {
 				page = (page + PAGES.length - 1) % PAGES.length;
 				settingsPage = getSettingsPageCount() - 1;
 			}else {
@@ -147,7 +235,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 		case 13:
 			if(settingsPage + 1 < getSettingsPageCount()) {
 				++settingsPage;
-			}else if(searchText.isEmpty()) {
+			}else if(moduleName == null && searchText.isEmpty()) {
 				page = (page + 1) % PAGES.length;
 				settingsPage = 0;
 			}else {
@@ -289,7 +377,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 			mc.displayGuiScreen(parent);
 			return;
 		}
-		if(searchField.textboxKeyTyped(character, keyCode)) {
+		if(searchField != null && searchField.textboxKeyTyped(character, keyCode)) {
 			String nextSearch = searchField.getText();
 			if(!nextSearch.equals(searchText)) {
 				searchText = nextSearch;
@@ -303,21 +391,14 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) {
-		searchField.mouseClicked(mouseX, mouseY, button);
+		if(searchField != null) {
+			searchField.mouseClicked(mouseX, mouseY, button);
+		}
 		super.mouseClicked(mouseX, mouseY, button);
 	}
 
 	private List<Integer> getDisplayedButtonIds() {
-		List<Integer> settings = new ArrayList<>();
-		if(searchText.isEmpty()) {
-			for(int id : PAGES[page]) {
-				if(!isSliderCompanion(id)) {
-					settings.add(id);
-				}
-			}
-		}else {
-			settings = getFilteredSettingIds();
-		}
+		List<Integer> settings = getAvailableSettingIds();
 		int pageSize = getSettingsPageSize();
 		int start = Math.min(settingsPage * pageSize, settings.size());
 		return new ArrayList<>(settings.subList(start, Math.min(start + pageSize, settings.size())));
@@ -326,36 +407,172 @@ public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicesta
 	private int getSettingsPageSize() {
 		int footerHeight = Math.min(20, Math.max(1, panelHeight - 1));
 		int footerY = panelY + panelHeight - footerHeight - 4;
-		int availableListHeight = Math.max(1, footerY - (panelY + 55) - 4);
+		int availableListHeight = Math.max(1, footerY - settingListY - 4);
 		int rows = Math.max(1, (availableListHeight + 2) / 24);
 		return rows * 2;
 	}
 
 	private int getSettingsPageCount() {
-		int settingsCount = 0;
-		if(searchText.isEmpty()) {
+		int settingsCount = getAvailableSettingIds().size();
+		return Math.max(1, (settingsCount + getSettingsPageSize() - 1) / getSettingsPageSize());
+	}
+
+	private List<Integer> getAvailableSettingIds() {
+		List<Integer> settings = new ArrayList<>();
+		if(moduleName != null) {
+			for(int id : moduleSettingIds) {
+				if(!isSliderCompanion(id) && !isModuleEnableSetting(id)) {
+					settings.add(id);
+				}
+			}
+		}else if(searchText.isEmpty()) {
 			for(int id : PAGES[page]) {
 				if(!isSliderCompanion(id)) {
-					++settingsCount;
+					settings.add(id);
 				}
 			}
 		}else {
-			settingsCount = getFilteredSettingIds().size();
+			settings = getFilteredSettingIds();
 		}
-		return Math.max(1, (settingsCount + getSettingsPageSize() - 1) / getSettingsPageSize());
+		return settings;
 	}
 
 	private List<Integer> getFilteredSettingIds() {
 		List<Integer> matches = new ArrayList<>();
 		String query = searchText.toLowerCase(Locale.ROOT);
-		for(int[] ids : PAGES) {
-			for(int id : ids) {
-				if(!isSliderCompanion(id) && getSearchLabel(id).toLowerCase(Locale.ROOT).contains(query)) {
+		if(moduleName != null) {
+			for(int id : moduleSettingIds) {
+				if(!isSliderCompanion(id) && !isModuleEnableSetting(id)
+						&& getSearchLabel(id).toLowerCase(Locale.ROOT).contains(query)) {
 					matches.add(id);
+				}
+			}
+		}else {
+			for(int[] ids : PAGES) {
+				for(int id : ids) {
+					if(!isSliderCompanion(id) && getSearchLabel(id).toLowerCase(Locale.ROOT).contains(query)) {
+						matches.add(id);
+					}
 				}
 			}
 		}
 		return matches;
+	}
+
+	private boolean isModuleEnableSetting(int id) {
+		if("Toggle Sprint".equals(moduleName)) return id == 1;
+		if("Toggle Sneak".equals(moduleName)) return id == 2;
+		if("Zoom".equals(moduleName)) return id == 3;
+		if("Freelook".equals(moduleName)) return id == 102;
+		if("Custom FOV".equals(moduleName)) return id == 29;
+		if("Crosshair".equals(moduleName)) return id == 35;
+		if("Chat".equals(moduleName)) return id == 60;
+		if("Streamer Mode".equals(moduleName)) return id == 73;
+		if("Fullbright".equals(moduleName)) return id == 24;
+		if("Block Outline".equals(moduleName)) return id == 94;
+		if("Notifications".equals(moduleName)) return id == 75;
+		return false;
+	}
+
+	private boolean isModuleEnabled() {
+		return GuiScreenPvpModuleSettings.isModuleEnabled(pvpClient, moduleName, moduleHudElement);
+	}
+
+	private void setModuleEnabled(boolean enabled) {
+		GuiScreenPvpModuleSettings.setModuleEnabled(pvpClient, mc, moduleName, moduleHudElement, enabled);
+	}
+
+	private void resetModuleSettings() {
+		if(moduleHudElement != null) {
+			pvpClient.getConfigStore().getConfig().resetElement(moduleHudElement.getId());
+		}
+		PvpConfig config = pvpClient.getConfigStore().getConfig();
+		PvpConfig defaults = new PvpConfig();
+		for(int id : moduleSettingIds) {
+			switch(id) {
+			case 7: config.coordinateFormat = defaults.coordinateFormat; break;
+			case 8: config.clock24Hour = defaults.clock24Hour; break;
+			case 9: config.clockShowSeconds = defaults.clockShowSeconds; break;
+			case 1: config.toggleSprintEnabled = defaults.toggleSprintEnabled; break;
+			case 2: config.toggleSneakEnabled = defaults.toggleSneakEnabled; break;
+			case 3: config.zoomEnabled = defaults.zoomEnabled; break;
+			case 4: config.zoomToggle = defaults.zoomToggle; break;
+			case 5: config.zoomStrength = defaults.zoomStrength; break;
+			case 67: config.zoomSmoothness = defaults.zoomSmoothness; break;
+			case 102: config.freelookEnabled = defaults.freelookEnabled; break;
+			case 104: config.freelookToggleMode = defaults.freelookToggleMode; break;
+			case 65: config.thirdPersonDistance = defaults.thirdPersonDistance; break;
+			case 29: config.customFovEnabled = defaults.customFovEnabled; break;
+			case 58: config.customFov = defaults.customFov; break;
+			case 35: config.crosshairEnabled = defaults.crosshairEnabled; break;
+			case 40: config.crosshairStyle = defaults.crosshairStyle; break;
+			case 41: config.crosshairColor = defaults.crosshairColor; break;
+			case 42: config.crosshairSize = defaults.crosshairSize; break;
+			case 44: config.crosshairThickness = defaults.crosshairThickness; break;
+			case 46: config.crosshairGap = defaults.crosshairGap; break;
+			case 50: config.crosshairOpacity = defaults.crosshairOpacity; break;
+			case 52: config.crosshairOutline = defaults.crosshairOutline; break;
+			case 53: config.crosshairDynamicColor = defaults.crosshairDynamicColor; break;
+			case 54: config.lowHealthThreshold = defaults.lowHealthThreshold; break;
+			case 56: config.crosshairHideInMenus = defaults.crosshairHideInMenus; break;
+			case 57: config.crosshairHideInThirdPerson = defaults.crosshairHideInThirdPerson; break;
+			case 60: config.chatTimestamps = defaults.chatTimestamps; break;
+			case 61: config.chatTimestamp24Hour = defaults.chatTimestamp24Hour; break;
+			case 62: config.chatHighlightMentions = defaults.chatHighlightMentions; break;
+			case 63: mc.gameSettings.chatOpacity = 1.0f; break;
+			case 78: config.chatCompact = defaults.chatCompact; break;
+			case 101: config.chatBackgroundColor = defaults.chatBackgroundColor; break;
+			case 73: config.streamerMode = defaults.streamerMode; break;
+			case 30: config.hideFireOverlay = defaults.hideFireOverlay; break;
+			case 31: config.hidePumpkinOverlay = defaults.hidePumpkinOverlay; break;
+			case 32: config.hidePortalOverlay = defaults.hidePortalOverlay; break;
+			case 33: config.hideChat = defaults.hideChat; break;
+			case 34: config.hideServerAddress = defaults.hideServerAddress; break;
+			case 74: config.hideUsername = defaults.hideUsername; break;
+			case 76: config.screenshotMode = defaults.screenshotMode; break;
+			case 24: config.fullbright = defaults.fullbright; break;
+			case 22: config.noFog = defaults.noFog; break;
+			case 23: config.hideWeather = defaults.hideWeather; break;
+			case 70: config.clearWater = defaults.clearWater; break;
+			case 71: config.customFogColorEnabled = defaults.customFogColorEnabled; break;
+			case 72: config.localTimeEnabled = defaults.localTimeEnabled; break;
+			case 69: config.localTime = defaults.localTime; break;
+			case 100: config.customFogColor = defaults.customFogColor; break;
+			case 94: config.blockOutlineEnabled = defaults.blockOutlineEnabled; break;
+			case 95: config.blockOutlineThickness = defaults.blockOutlineThickness; break;
+			case 86: config.heldItemScale = defaults.heldItemScale; break;
+			case 88: config.heldItemOffsetX = defaults.heldItemOffsetX; break;
+			case 90: config.heldItemOffsetY = defaults.heldItemOffsetY; break;
+			case 92: config.glintEnabled = defaults.glintEnabled; break;
+			case 97: config.glintIntensity = defaults.glintIntensity; break;
+			case 99: config.glintColor = defaults.glintColor; break;
+			case 79:
+				config.fpsLimit = defaults.fpsLimit;
+				mc.gameSettings.limitFramerate = config.fpsLimit;
+				break;
+			case 80: config.applyPerformanceProfile(defaults.performanceProfile); break;
+			case 75: config.notificationsEnabled = defaults.notificationsEnabled; break;
+			case 103: config.vanillaFoodOverlayEnabled = defaults.vanillaFoodOverlayEnabled; break;
+			}
+		}
+		if(containsSetting(63)) {
+			mc.gameSettings.saveOptions();
+			mc.ingameGUI.getChatGUI().refreshChat();
+		}
+		if(containsSetting(80)) {
+			mc.gameSettings.limitFramerate = config.fpsLimit;
+			mc.gameSettings.saveOptions();
+		}
+		pvpClient.getConfigStore().markDirty();
+	}
+
+	private boolean containsSetting(int settingId) {
+		for(int id : moduleSettingIds) {
+			if(id == settingId) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private boolean isSliderCompanion(int id) {
