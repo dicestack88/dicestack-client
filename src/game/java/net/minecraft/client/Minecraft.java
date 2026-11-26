@@ -131,6 +131,7 @@ import net.minecraft.client.resources.GrassColorReloadListener;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.resources.IReloadableResourceManager;
 import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.client.resources.IResourcePack;
 import net.minecraft.client.resources.LanguageManager;
 import net.minecraft.client.resources.ResourcePackRepository;
@@ -2343,6 +2344,10 @@ public class Minecraft implements IThreadListener {
 
 	public IResourceManager getResourceManager() {
 		return this.mcResourceManager;
+	}
+
+	public void registerResourceReloadListener(IResourceManagerReloadListener listener) {
+		this.mcResourceManager.registerReloadListener(listener);
 	}
 
 	public ResourcePackRepository getResourcePackRepository() {

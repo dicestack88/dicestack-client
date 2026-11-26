@@ -1,6 +1,7 @@
 package net.lax1dude.eaglercraft.v1_8.pvp;
 
 import net.minecraft.client.Minecraft;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 
 public final class PvpSliderButton extends PvpGuiButton {
 
@@ -18,6 +19,8 @@ public final class PvpSliderButton extends PvpGuiButton {
 	private final ValueListener listener;
 	private final ValueFormatter formatter;
 	private float value;
+	private float cachedLabelValue = Float.NaN;
+	private String cachedRenderedLabel;
 	private boolean dragging;
 
 	public PvpSliderButton(int id, int x, int y, int width, int height, String label,
@@ -40,25 +43,26 @@ public final class PvpSliderButton extends PvpGuiButton {
 		if(dragging) {
 			setValueAt(mouseX);
 		}
-		displayString = super.displayString;
-		super.displayString = displayString + ": " + formatter.format(value);
 		super.drawButton(minecraft, mouseX, mouseY);
-		super.displayString = displayString;
 		int trackY = yPosition + height - 4;
 		int trackLeft = xPosition + 5;
 		int trackWidth = Math.max(1, width - 10);
-		drawRect(trackLeft, trackY, trackLeft + trackWidth, trackY + 2, 0xFF0B1119);
+		int radius = 1;
+		PvpClient client = PvpClient.getInstance();
+		if(client != null) {
+			radius = client.getConfigStore().getConfig().appearance.cornerRadius;
+		}
+		HudRenderer.drawRoundedRect(trackLeft, trackY, trackWidth, 2, radius, 0xFF0B1119);
 		float normalized = maximum == minimum ? 0.0f : (value - minimum) / (maximum - minimum);
 		int filled = Math.round(trackWidth * normalized);
 		int accent = 0xFF53D6A3;
-		PvpClient client = PvpClient.getInstance();
 		if(client != null) {
 			accent = client.getConfigStore().getConfig().appearance.accentColor;
 		}
 		if(filled > 0) {
-			drawRect(trackLeft, trackY, trackLeft + filled, trackY + 2, accent);
+			HudRenderer.drawRoundedRect(trackLeft, trackY, filled, 2, radius, accent);
 		}
-		drawRect(trackLeft + filled - 1, trackY - 2, trackLeft + filled + 2, trackY + 4, 0xFFFFFFFF);
+		HudRenderer.drawRoundedRect(trackLeft + filled - 1, trackY - 2, 3, 6, 2, 0xFFFFFFFF);
 	}
 
 	@Override
@@ -90,6 +94,15 @@ public final class PvpSliderButton extends PvpGuiButton {
 
 	public float getValue() {
 		return value;
+	}
+
+	@Override
+	protected String getButtonLabel() {
+		if(cachedRenderedLabel == null || cachedLabelValue != value) {
+			cachedLabelValue = value;
+			cachedRenderedLabel = displayString + ": " + formatter.format(value);
+		}
+		return cachedRenderedLabel;
 	}
 
 	private void setValueAt(int mouseX) {

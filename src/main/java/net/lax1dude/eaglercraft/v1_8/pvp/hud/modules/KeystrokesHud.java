@@ -1,5 +1,6 @@
 package net.lax1dude.eaglercraft.v1_8.pvp.hud.modules;
 
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElement;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElementConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
@@ -58,6 +59,7 @@ public final class KeystrokesHud implements HudElement {
 		HudElementConfig config = context.config.getElement(getId());
 		int width = getWidth(context);
 		int height = getHeight(context);
+		int radius = HudRenderer.resolveAppearance(context, getId()).cornerRadius;
 		HudRenderer.drawPanel(context, getId(), x, y, width, height);
 		int size = config.keystrokesKeySize;
 		int spacing = config.keystrokesSpacing;
@@ -65,28 +67,30 @@ public final class KeystrokesHud implements HudElement {
 		int cursorY = y + pad;
 		if(config.keystrokesWASD) {
 			int gridX = x + pad + (width - pad * 2 - size * 3 - spacing * 2) / 2;
-			drawKey("W", (activeKeys & 1) != 0, gridX + size + spacing, cursorY, size, size, config);
-			drawKey("A", (activeKeys & 2) != 0, gridX, cursorY + size + spacing, size, size, config);
-			drawKey("S", (activeKeys & 4) != 0, gridX + size + spacing, cursorY + size + spacing, size, size, config);
-			drawKey("D", (activeKeys & 8) != 0, gridX + (size + spacing) * 2, cursorY + size + spacing, size, size, config);
+			drawKey("W", (activeKeys & 1) != 0, gridX + size + spacing, cursorY, size, size, config, radius);
+			drawKey("A", (activeKeys & 2) != 0, gridX, cursorY + size + spacing, size, size, config, radius);
+			drawKey("S", (activeKeys & 4) != 0, gridX + size + spacing, cursorY + size + spacing, size, size,
+					config, radius);
+			drawKey("D", (activeKeys & 8) != 0, gridX + (size + spacing) * 2, cursorY + size + spacing, size,
+					size, config, radius);
 			cursorY += (size + spacing) * 2;
 		}
 		if(config.keystrokesSpace) {
 			drawKey("SPACE", (activeKeys & 16) != 0, x + pad, cursorY,
-					size * 3 + spacing * 2, size, config);
+					size * 3 + spacing * 2, size, config, radius);
 			cursorY += size + spacing;
 		}
 		if(config.keystrokesShift) {
 			drawKey("SHIFT", (activeKeys & 128) != 0, x + pad, cursorY,
-					size * 3 + spacing * 2, size, config);
+					size * 3 + spacing * 2, size, config, radius);
 			cursorY += size + spacing;
 		}
 		if(config.keystrokesMouse) {
 			int mouseRowWidth = size * 2 + spacing;
 			int mouseX = x + pad + (width - pad * 2 - mouseRowWidth) / 2;
-			drawKey(leftMouseLabel, (activeKeys & 32) != 0, mouseX, cursorY, size, size, config);
+			drawKey(leftMouseLabel, (activeKeys & 32) != 0, mouseX, cursorY, size, size, config, radius);
 			drawKey(rightMouseLabel, (activeKeys & 64) != 0,
-					mouseX + size + spacing, cursorY, size, size, config);
+					mouseX + size + spacing, cursorY, size, size, config, radius);
 		}
 	}
 
@@ -122,12 +126,12 @@ public final class KeystrokesHud implements HudElement {
 	}
 
 	private void drawKey(String label, boolean active, int x, int y, int width, int height,
-			HudElementConfig config) {
+			HudElementConfig config, int radius) {
 		int background = active ? config.keystrokesPressedColor : config.keystrokesUnpressedColor;
-		Gui.drawRect(x, y + 2, x + width, y + height + 2, 0x88000000);
-		Gui.drawRect(x, y, x + width, y + height,
+		HudRenderer.drawRoundedRect(x, y + 2, width, height, radius, 0x88000000);
+		HudRenderer.drawRoundedRect(x, y, width, height, radius,
 				active ? HudRenderer.withAlpha(background, 1.0f) : background);
-		Gui.drawRect(x, y, x + width, y + 1,
+		HudRenderer.drawRoundedBorder(x, y, width, height, radius, 1,
 				active ? 0xFFFFFFFF : HudRenderer.withAlpha(config.appearance.accentColor, 0.72f));
 		if(active) {
 			Gui.drawRect(x, y + height - 2, x + width, y + height,
@@ -135,11 +139,12 @@ public final class KeystrokesHud implements HudElement {
 		}else {
 			Gui.drawRect(x, y + height - 1, x + width, y + height, 0x55000000);
 		}
-		int textWidth = minecraft.fontRendererObj.getStringWidth(label);
+		net.minecraft.client.gui.FontRenderer font = PvpUiFontRenderer.get(minecraft);
+		int textWidth = font.getStringWidth(label);
 		int textX = x + Math.max(1, (width - textWidth) / 2);
 		int textY = y + Math.max(1, (height - 8) / 2) - (active ? 1 : 0);
 		if(config.keystrokesLabels) {
-			minecraft.fontRendererObj.drawStringWithShadow(label, textX, textY,
+			font.drawStringWithShadow(label, textX, textY,
 					active ? 0xFF102019 : 0xFFF1F7F5);
 		}
 	}
