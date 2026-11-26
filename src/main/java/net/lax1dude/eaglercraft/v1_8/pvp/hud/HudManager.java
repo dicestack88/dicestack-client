@@ -113,7 +113,10 @@ public final class HudManager {
 	public void renderEditor(ScaledResolution resolution, float partialTicks, PvpRuntime runtime) {
 		context.update(minecraft, resolution, partialTicks, runtime);
 		for(int i = 0, l = modules.size(); i < l; ++i) {
-			renderElement(modules.get(i).element, resolution);
+			HudElement element = modules.get(i).element;
+			if(config.getElement(element.getId()).enabled) {
+				renderElement(element, resolution);
+			}
 		}
 	}
 
@@ -204,6 +207,9 @@ public final class HudManager {
 	public HudElement getElementAt(int x, int y, ScaledResolution resolution) {
 		for(int i = modules.size() - 1; i >= 0; --i) {
 			HudElement element = modules.get(i).element;
+			if(!config.getElement(element.getId()).enabled) {
+				continue;
+			}
 			int elementX = getElementX(element, resolution);
 			int elementY = getElementY(element, resolution);
 			int elementWidth = getElementWidth(element);

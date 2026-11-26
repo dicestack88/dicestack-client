@@ -22,7 +22,7 @@ import net.minecraft.util.ResourceLocation;
 public final class HudRenderer {
 
 	private static final ResourceLocation POTION_ICONS = new ResourceLocation("textures/gui/container/inventory.png");
-	private static final int CORNER_SEGMENTS = 4;
+	private static final int CORNER_SEGMENTS = 8;
 	private static final int CORNER_POINTS = (CORNER_SEGMENTS + 1) * 4;
 	private static final float[] CORNER_COS = new float[CORNER_POINTS];
 	private static final float[] CORNER_SIN = new float[CORNER_POINTS];
