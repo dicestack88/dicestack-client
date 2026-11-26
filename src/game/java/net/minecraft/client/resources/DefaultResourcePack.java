@@ -39,7 +39,7 @@ import net.minecraft.util.ResourceLocation;
  * 
  */
 public class DefaultResourcePack extends ResourceIndex implements IResourcePack {
-	public static final Set<String> defaultResourceDomains = ImmutableSet.of("minecraft", "eagler");
+	public static final Set<String> defaultResourceDomains = ImmutableSet.of("minecraft", "eagler", "dicestack");
 
 	private final Collection<String> propertyFilesIndex;
 
