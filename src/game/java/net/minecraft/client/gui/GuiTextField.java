@@ -8,8 +8,12 @@ import com.google.common.base.Predicates;
 import net.lax1dude.eaglercraft.v1_8.minecraft.EnumInputEvent;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatAllowedCharacters;
 import net.minecraft.util.MathHelper;
 
@@ -72,7 +76,7 @@ public class GuiTextField extends Gui {
 
 	public GuiTextField(int componentId, FontRenderer fontrendererObj, int x, int y, int par5Width, int par6Height) {
 		this.id = componentId;
-		this.fontRendererInstance = fontrendererObj;
+		this.fontRendererInstance = PvpUiFontRenderer.get(Minecraft.getMinecraft());
 		this.xPosition = x;
 		this.yPosition = y;
 		this.width = par5Width;
@@ -442,10 +446,18 @@ public class GuiTextField extends Gui {
 	public void drawTextBox() {
 		if (this.getVisible()) {
 			if (this.getEnableBackgroundDrawing()) {
-				drawRect(this.xPosition - 1, this.yPosition - 1, this.xPosition + this.width + 1,
-						this.yPosition + this.height + 1, -6250336);
-				drawRect(this.xPosition, this.yPosition, this.xPosition + this.width, this.yPosition + this.height,
-						-16777216);
+				int radius = 4;
+				int accent = 0x88566A7D;
+				PvpClient pvp = PvpClient.getInstance();
+				if(pvp != null) {
+					radius = pvp.getConfigStore().getConfig().appearance.cornerRadius;
+					accent = pvp.getConfigStore().getConfig().appearance.accentColor;
+				}
+				radius = Math.min(radius, Math.min(this.width, this.height) / 2);
+				HudRenderer.drawRoundedRect(this.xPosition, this.yPosition, this.width, this.height, radius,
+						this.isEnabled ? 0xF0161F29 : 0xD012181F);
+				HudRenderer.drawRoundedBorder(this.xPosition, this.yPosition, this.width, this.height, radius, 1,
+						this.isFocused ? accent : 0x88566A7D);
 			}
 
 			int i = this.isEnabled ? this.enabledColor : this.disabledColor;

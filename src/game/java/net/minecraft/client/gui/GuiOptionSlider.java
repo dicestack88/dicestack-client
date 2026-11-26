@@ -1,6 +1,8 @@
 package net.minecraft.client.gui;
 
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.util.MathHelper;
@@ -76,12 +78,25 @@ public class GuiOptionSlider extends GuiButton {
 				this.displayString = minecraft.gameSettings.getKeyBinding(this.options);
 			}
 
-			minecraft.getTextureManager().bindTexture(buttonTextures);
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-			this.drawTexturedModalRect(this.xPosition + (int) (this.sliderValue * (float) (this.width - 8)),
-					this.yPosition, 0, 66, 4, 20);
-			this.drawTexturedModalRect(this.xPosition + (int) (this.sliderValue * (float) (this.width - 8)) + 4,
-					this.yPosition, 196, 66, 4, 20);
+			int trackY = this.yPosition + this.height - 4;
+			int trackLeft = this.xPosition + 5;
+			int trackWidth = Math.max(1, this.width - 10);
+			int radius = 2;
+			int accent = 0xFF53D6A3;
+			PvpClient pvp = PvpClient.getInstance();
+			if(pvp != null) {
+				radius = pvp.getConfigStore().getConfig().appearance.cornerRadius;
+				accent = pvp.getConfigStore().getConfig().appearance.accentColor;
+			}
+			HudRenderer.drawRoundedRect(trackLeft, trackY, trackWidth, 2,
+					Math.min(radius, 1), 0xFF0B1119);
+			int filled = Math.round(trackWidth * this.sliderValue);
+			if(filled > 0) {
+				HudRenderer.drawRoundedRect(trackLeft, trackY, filled, 2,
+						Math.min(radius, 1), accent);
+			}
+			int knobX = trackLeft + filled;
+			HudRenderer.drawRoundedRect(knobX - 2, trackY - 2, 5, 6, 2, 0xFFF1F7F5);
 		}
 	}
 

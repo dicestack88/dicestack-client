@@ -45,7 +45,7 @@ public final class KeystrokesHud implements HudElement {
 		int size = config.keystrokesKeySize;
 		int spacing = config.keystrokesSpacing;
 		int rows = 0;
-		if(config.keystrokesWASD) rows += 3;
+		if(config.keystrokesWASD) rows += 2;
 		if(config.keystrokesSpace) rows += 1;
 		if(config.keystrokesShift) rows += 1;
 		if(config.keystrokesMouse) rows += 1;
@@ -128,18 +128,19 @@ public final class KeystrokesHud implements HudElement {
 	private void drawKey(String label, boolean active, int x, int y, int width, int height,
 			HudElementConfig config, int radius) {
 		int background = active ? config.keystrokesPressedColor : config.keystrokesUnpressedColor;
-		HudRenderer.drawRoundedRect(x, y + 2, width, height, radius, 0x88000000);
 		HudRenderer.drawRoundedRect(x, y, width, height, radius,
 				active ? HudRenderer.withAlpha(background, 1.0f) : background);
 		HudRenderer.drawRoundedBorder(x, y, width, height, radius, 1,
 				active ? 0xFFFFFFFF : HudRenderer.withAlpha(config.appearance.accentColor, 0.72f));
 		if(active) {
-			Gui.drawRect(x, y + height - 2, x + width, y + height,
+			HudRenderer.drawRoundedRect(x + 1, y + height - 3, Math.max(1, width - 2), 2, 1,
 					HudRenderer.withAlpha(config.keystrokesPressedColor, 0.65f));
 		}else {
-			Gui.drawRect(x, y + height - 1, x + width, y + height, 0x55000000);
+			HudRenderer.drawRoundedRect(x + 1, y + height - 2, Math.max(1, width - 2), 1, 1,
+					0x55000000);
 		}
 		net.minecraft.client.gui.FontRenderer font = PvpUiFontRenderer.get(minecraft);
+		label = font.trimStringToWidth(label, Math.max(1, width - 4));
 		int textWidth = font.getStringWidth(label);
 		int textX = x + Math.max(1, (width - textWidth) / 2);
 		int textY = y + Math.max(1, (height - 8) / 2) - (active ? 1 : 0);

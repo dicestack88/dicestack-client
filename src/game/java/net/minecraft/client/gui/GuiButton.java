@@ -5,6 +5,9 @@ import static net.lax1dude.eaglercraft.v1_8.opengl.RealOpenGLEnums.*;
 import net.lax1dude.eaglercraft.v1_8.Mouse;
 import net.lax1dude.eaglercraft.v1_8.internal.EnumCursorType;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.audio.SoundHandler;
@@ -81,44 +84,42 @@ public class GuiButton extends Gui {
 	 */
 	public void drawButton(Minecraft mc, int mouseX, int mouseY) {
 		if (this.visible) {
-			FontRenderer fontrenderer = mc.fontRendererObj;
-			mc.getTextureManager().bindTexture(buttonTextures);
-			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			this.hovered = mouseX >= this.xPosition && mouseY >= this.yPosition && mouseX < this.xPosition + this.width
 					&& mouseY < this.yPosition + this.height;
 			if (this.enabled && this.hovered) {
 				Mouse.showCursor(EnumCursorType.HAND);
 			}
-			int i = this.getHoverState(this.hovered);
-			GlStateManager.enableBlend();
-			GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-			GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, 46 + i * 20, this.width / 2, this.height);
-			this.drawTexturedModalRect(this.xPosition + this.width / 2, this.yPosition, 200 - this.width / 2,
-					46 + i * 20, this.width / 2, this.height);
+			int radius = 4;
+			int accent = 0xFF53D6A3;
+			PvpClient pvp = PvpClient.getInstance();
+			if(pvp != null) {
+				radius = pvp.getConfigStore().getConfig().appearance.cornerRadius;
+				accent = pvp.getConfigStore().getConfig().appearance.accentColor;
+			}
+			radius = Math.min(radius, Math.min(this.width, this.height) / 2);
+			int fill = !this.enabled ? 0xD0161F29
+					: this.hovered ? 0xF02A3A4C : 0xE51E2B3A;
+			HudRenderer.drawRoundedRect(this.xPosition, this.yPosition, this.width, this.height, radius, fill);
+			HudRenderer.drawRoundedBorder(this.xPosition, this.yPosition, this.width, this.height, radius, 1,
+					!this.enabled ? 0x662E3A48
+							: this.hovered ? accent : 0x88566A7D);
 			this.mouseDragged(mc, mouseX, mouseY);
-			int j = 14737632;
+			int j = 0xFFE2EAF1;
 			if (!this.enabled) {
-				j = 10526880;
+				j = 0xFF7F8C9A;
 			} else if (this.hovered) {
-				j = 16777120;
+				j = 0xFFFFFFFF;
 			}
-
-			if (fontScale == 1.0f) {
-				this.drawCenteredString(fontrenderer, this.displayString, this.xPosition + this.width / 2,
-						this.yPosition + (this.height - 8) / 2, j);
-			} else {
-				float xScale = fontScale;
-				float yScale = 1.0f + (fontScale - 1.0f) * 0.7f;
-				float strWidth = fontrenderer.getStringWidth(displayString) / xScale;
-				GlStateManager.pushMatrix();
-				GlStateManager.translate(this.xPosition + this.width / 2,
-						this.yPosition + (this.height - 8 * yScale) / 2, 1.0f);
-				GlStateManager.scale(xScale, yScale, 1.0f);
-				GlStateManager.translate(-strWidth * 0.5f * xScale, 0.0f, 0.0f);
-				fontrenderer.drawStringWithShadow(displayString, 0, 0, j);
-				GlStateManager.popMatrix();
+			FontRenderer fontrenderer = PvpUiFontRenderer.get(mc);
+			int availableWidth = Math.max(0, this.width - 10);
+			String label = this.displayString == null ? "" : this.displayString;
+			if(fontrenderer.getStringWidth(label) > availableWidth) {
+				String suffix = availableWidth >= fontrenderer.getStringWidth("...") ? "..." : "";
+				int textLimit = Math.max(0, availableWidth - fontrenderer.getStringWidth(suffix));
+				label = fontrenderer.trimStringToWidth(label, textLimit) + suffix;
 			}
+			this.drawCenteredString(fontrenderer, label, this.xPosition + this.width / 2,
+					this.yPosition + (this.height - 8) / 2, j);
 		}
 	}
 

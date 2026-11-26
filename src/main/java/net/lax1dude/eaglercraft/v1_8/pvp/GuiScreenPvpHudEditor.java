@@ -90,6 +90,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
 		HudManager hudManager = pvpClient.getHudManager();
+		if(selectedElement != null
+				&& !pvpClient.getHudManager().getElementConfig(selectedElement).enabled) {
+			selectedElement = null;
+		}
 		hudManager.renderEditor(resolution, partialTicks, pvpClient.getRuntime());
 		drawSnapGuides();
 		drawElementBounds(hudManager);
@@ -384,11 +388,14 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private void drawElementBounds(HudManager hudManager) {
 		for(int i = 0, count = hudManager.getElementCount(); i < count; ++i) {
 			HudElement element = hudManager.getElement(i);
+			HudElementConfig elementConfig = hudManager.getElementConfig(element);
+			if(!elementConfig.enabled) {
+				continue;
+			}
 			int x = hudManager.getElementX(element, resolution);
 			int y = hudManager.getElementY(element, resolution);
 			int right = x + Math.max(1, hudManager.getElementWidth(element));
 			int bottom = y + Math.max(1, hudManager.getElementHeight(element));
-			HudElementConfig elementConfig = hudManager.getElementConfig(element);
 			int color = element == selectedElement ? 0xFF53D6A3
 					: elementConfig.enabled ? 0xAAFFFFFF : 0xAAFF6666;
 			Gui.drawRect(x, y, right, y + 1, color);

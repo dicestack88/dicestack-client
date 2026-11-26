@@ -32,6 +32,10 @@ import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.profile.GuiScreenEditProfile;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.lax1dude.eaglercraft.v1_8.sp.SingleplayerServerController;
 import net.lax1dude.eaglercraft.v1_8.sp.gui.GuiScreenDemoPlayWorldSelection;
 import net.lax1dude.eaglercraft.v1_8.sp.gui.GuiScreenIntegratedServerBusy;
@@ -610,6 +614,22 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 		if (enableBlur) {
 			this.drawGradientRect(0, 0, this.width, this.height, -2130706433, 16777215);
 			this.drawGradientRect(0, 0, this.width, this.height, 0, Integer.MIN_VALUE);
+		}
+		PvpClient pvpClient = PvpClient.getInstance();
+		if(pvpClient != null) {
+			HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
+			int menuTop = this.height / 4 + 48 - 10;
+			int menuWidth = 224;
+			HudRenderer.drawRoundedGradientRect(this.width / 2 - menuWidth / 2, menuTop,
+					menuWidth, 150, appearance.cornerRadius,
+					0xD5182633, 0xD90F1722, false);
+			HudRenderer.drawRoundedBorder(this.width / 2 - menuWidth / 2, menuTop,
+					menuWidth, 150, appearance.cornerRadius, 1,
+					HudRenderer.withAlpha(appearance.accentColor, 0.55f));
+			FontRenderer uiFont = PvpUiFontRenderer.get(this.mc);
+			String brand = uiFont.trimStringToWidth("DICESTACK", menuWidth - 20);
+			uiFont.drawStringWithShadow(brand, this.width / 2 - uiFont.getStringWidth(brand) / 2,
+					menuTop + 7, 0xFFF1F7F5);
 		}
 		this.mc.getTextureManager().bindTexture(minecraftTitleTextures);
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
