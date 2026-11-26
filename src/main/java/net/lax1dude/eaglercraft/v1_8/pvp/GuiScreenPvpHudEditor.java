@@ -17,13 +17,14 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private static final int TOOLBAR_BUTTONS = 7;
 	private static final int POPUP_BUTTONS = 24;
 	private static final int[] TOOLBAR_IDS = { 1, 2, 20, 3, 4, 5, 6 };
-	private static final String[] TOOLBAR_LABELS = { "Hide", "-", "", "+", "Reset", "All", "Done" };
+	private static final String[] TOOLBAR_LABELS = { "Hide", "", "", "", "Reset", "All", "Done" };
 	private static final int[] POPUP_IDS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25,
 			26, 27, 28, 29, 30, 31, 32, 33, 34 };
 	private static final int[] COLORS = { 0xFFF1F7F5, 0xFF53D6A3, 0xFF55DDA0, 0xFFFFD166, 0xFF70A7FF,
 			0xFFFF7777, 0xFFFFFFFF, 0xFF111820, 0xFF172638, 0xFF0F1722, 0xFF8BA0B5 };
 
 	private final PvpClient pvpClient;
+	private final GuiScreen parent;
 	private final int[] toolbarX = new int[TOOLBAR_BUTTONS];
 	private final int[] toolbarY = new int[TOOLBAR_BUTTONS];
 	private final int[] toolbarWidth = new int[TOOLBAR_BUTTONS];
@@ -49,9 +50,16 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private int guideX = -1;
 	private int guideY = -1;
 	private boolean dragging;
+	private boolean adjustingScale;
+	private int activePopupSlider = -1;
 
 	public GuiScreenPvpHudEditor(PvpClient pvpClient) {
+		this(pvpClient, null);
+	}
+
+	public GuiScreenPvpHudEditor(PvpClient pvpClient, GuiScreen parent) {
 		this.pvpClient = pvpClient;
+		this.parent = parent;
 	}
 
 	@Override
@@ -157,10 +165,15 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		HudElementConfig elementConfig = selectedElement == null ? null
 				: pvpClient.getHudManager().getElementConfig(selectedElement);
 		for(int i = 0; i < TOOLBAR_BUTTONS; ++i) {
+			if(i == 1 || i == 3) {
+				continue;
+			}
+			if(i == 2) {
+				drawScaleSlider(elementConfig, mouseX, mouseY);
+				continue;
+			}
 			String label = TOOLBAR_LABELS[i];
-			if(TOOLBAR_IDS[i] == 20) {
-				label = elementConfig == null ? "Scale" : Float.toString(elementConfig.scale) + "x";
-			}else if(TOOLBAR_IDS[i] == 1 && elementConfig != null && !elementConfig.enabled) {
+			if(TOOLBAR_IDS[i] == 1 && elementConfig != null && !elementConfig.enabled) {
 				label = "Show";
 			}
 			drawControl(toolbarX[i], toolbarY[i], toolbarWidth[i], toolbarHeight[i], label,
@@ -169,14 +182,151 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		}
 	}
 
+	private void drawScaleSlider(HudElementConfig elementConfig, int mouseX, int mouseY) {
+		int x = toolbarX[1];
+		int y = toolbarY[1];
+		int right = toolbarX[3] + toolbarWidth[3];
+		int sliderWidth = right - x;
+		boolean hovered = contains(x, y, sliderWidth, toolbarHeight[1], mouseX, mouseY);
+		Gui.drawRect(x, y, right, y + toolbarHeight[1], hovered ? 0xFF304257 : 0xE51E2B3A);
+		Gui.drawRect(x, y, right, y + 1, 0xFF53D6A3);
+		float scale = elementConfig == null ? 1.0f : elementConfig.scale;
+		String label = "Scale  " + Math.round(scale * 100.0f) / 100.0f + "x";
+		fontRendererObj.drawString(label, x + 3, y + 2, 0xFFF1F7F5);
+		int trackLeft = x + 4;
+		int trackWidth = Math.max(1, sliderWidth - 8);
+		int trackY = y + toolbarHeight[1] - 4;
+		Gui.drawRect(trackLeft, trackY, trackLeft + trackWidth, trackY + 2, 0xFF0B1119);
+		int filled = Math.round(trackWidth * (scale - 0.5f) / 2.5f);
+		Gui.drawRect(trackLeft, trackY, trackLeft + Math.max(1, filled), trackY + 2, 0xFF53D6A3);
+		Gui.drawRect(trackLeft + filled - 1, trackY - 2, trackLeft + filled + 2, trackY + 4, 0xFFFFFFFF);
+	}
+
 	private void drawAppearancePopup(int mouseX, int mouseY) {
 		drawPanel(popupPanelX, popupPanelY, popupPanelWidth, popupPanelHeight);
 		for(int i = 0; i < POPUP_BUTTONS; ++i) {
+			int id = POPUP_IDS[i];
+			if(id == 18 || id == 23 || id == 32 || id == 34) {
+				continue;
+			}
+			if(id == 17 || id == 22 || id == 31 || id == 33) {
+				int companion = id + 1;
+				int companionIndex = popupIndex(companion);
+				if(companionIndex >= 0) {
+					int sliderX = popupXByButton[i];
+					int sliderY = popupYByButton[i];
+					int sliderWidth = popupXByButton[companionIndex] + popupWidthByButton[companionIndex] - sliderX;
+					drawPopupSlider(id, sliderX, sliderY, sliderWidth,
+							popupHeightByButton[i], mouseX, mouseY);
+					continue;
+				}
+			}
 			drawControl(popupXByButton[i], popupYByButton[i], popupWidthByButton[i], popupHeightByButton[i],
-					popupLabels[i], isPopupControlActive(POPUP_IDS[i]),
+					popupLabels[i], isPopupControlActive(id),
 					contains(popupXByButton[i], popupYByButton[i], popupWidthByButton[i],
 							popupHeightByButton[i], mouseX, mouseY));
 		}
+	}
+
+	private void drawPopupSlider(int id, int x, int y, int controlWidth, int controlHeight, int mouseX, int mouseY) {
+		boolean hovered = contains(x, y, controlWidth, controlHeight, mouseX, mouseY);
+		Gui.drawRect(x, y, x + controlWidth, y + controlHeight, hovered ? 0xFF304257 : 0xCC202D3A);
+		Gui.drawRect(x, y, x + controlWidth, y + 1, hovered ? 0xFF53D6A3 : 0xFF526477);
+		String label = popupSliderLabel(id);
+		fontRendererObj.drawString(label, x + 3, y + Math.max(0, (controlHeight - 8) / 2 - 2), 0xFFF1F7F5);
+		int trackLeft = x + 4;
+		int trackWidth = Math.max(1, controlWidth - 8);
+		int trackY = y + controlHeight - 3;
+		float minimum = popupSliderMinimum(id);
+		float maximum = popupSliderMaximum(id);
+		float value = popupSliderValue(id);
+		Gui.drawRect(trackLeft, trackY, trackLeft + trackWidth, trackY + 2, 0xFF0B1119);
+		int filled = Math.round(trackWidth * (value - minimum) / Math.max(1.0f, maximum - minimum));
+		Gui.drawRect(trackLeft, trackY, trackLeft + Math.max(1, filled), trackY + 2, 0xFF53D6A3);
+		Gui.drawRect(trackLeft + filled - 1, trackY - 2, trackLeft + filled + 2, trackY + 4, 0xFFFFFFFF);
+	}
+
+	private int popupIndex(int id) {
+		for(int i = 0; i < POPUP_IDS.length; ++i) {
+			if(POPUP_IDS[i] == id) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private String popupSliderLabel(int id) {
+		switch(id) {
+		case 17: return "BG OPACITY  " + Math.round(popupSliderValue(id) * 100.0f) + "%";
+		case 22: return "BORDER WIDTH  " + Math.round(popupSliderValue(id));
+		case 31: return "X OFFSET  " + pvpClient.getHudManager().getElementConfig(selectedElement).offsetX;
+		case 33: return "Y OFFSET  " + pvpClient.getHudManager().getElementConfig(selectedElement).offsetY;
+		default: return "";
+		}
+	}
+
+	private float popupSliderValue(int id) {
+		HudElementConfig element = pvpClient.getHudManager().getElementConfig(selectedElement);
+		HudAppearanceConfig style = getAppearance(element);
+		switch(id) {
+		case 17: return style.backgroundOpacity;
+		case 22: return style.borderThickness;
+		case 31: return element.offsetX;
+		case 33: return element.offsetY;
+		default: return 0.0f;
+		}
+	}
+
+	private float popupSliderMinimum(int id) {
+		return id == 17 ? 0.0f : id == 22 ? 0.0f : id == 31 ? -width : -height;
+	}
+
+	private float popupSliderMaximum(int id) {
+		return id == 17 ? 1.0f : id == 22 ? 4.0f : id == 31 ? width : height;
+	}
+
+	private boolean startPopupSlider(int mouseX, int mouseY) {
+		for(int id : new int[] { 17, 22, 31, 33 }) {
+			int index = popupIndex(id);
+			int companionIndex = popupIndex(id + 1);
+			if(index < 0 || companionIndex < 0) {
+				continue;
+			}
+			int x = popupXByButton[index];
+			int y = popupYByButton[index];
+			int right = popupXByButton[companionIndex] + popupWidthByButton[companionIndex];
+			int h = popupHeightByButton[index];
+			if(contains(x, y, right - x, h, mouseX, mouseY)) {
+				activePopupSlider = id;
+				updatePopupSlider(mouseX);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void updatePopupSlider(int mouseX) {
+		int index = popupIndex(activePopupSlider);
+		int companionIndex = popupIndex(activePopupSlider + 1);
+		if(index < 0 || companionIndex < 0) {
+			return;
+		}
+		int x = popupXByButton[index] + 4;
+		int trackWidth = Math.max(1, popupXByButton[companionIndex] + popupWidthByButton[companionIndex]
+				- popupXByButton[index] - 8);
+		float fraction = Math.max(0.0f, Math.min(1.0f, (mouseX - x) / (float) trackWidth));
+		float value = popupSliderMinimum(activePopupSlider)
+				+ (popupSliderMaximum(activePopupSlider) - popupSliderMinimum(activePopupSlider)) * fraction;
+		HudElementConfig element = pvpClient.getHudManager().getElementConfig(selectedElement);
+		HudAppearanceConfig style = getAppearance(element);
+		switch(activePopupSlider) {
+		case 17: style.backgroundOpacity = value; break;
+		case 22: style.borderThickness = Math.round(value); break;
+		case 31: element.offsetX = Math.round(value); break;
+		case 33: element.offsetY = Math.round(value); break;
+		}
+		pvpClient.getConfigStore().markDirty();
+		updateControlLabels();
 	}
 
 	private void drawPanel(int x, int y, int panelWidth, int panelHeight) {
@@ -264,11 +414,11 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		popupLabels[5] = "G2 CLR";
 		popupLabels[6] = "TXT CLR";
 		popupLabels[7] = "OP -";
-		popupLabels[8] = "OP +";
+		popupLabels[8] = "";
 		popupLabels[9] = style.borderEnabled ? "BORD ON" : "BORD OFF";
 		popupLabels[10] = "B CLR";
-		popupLabels[11] = "B -";
-		popupLabels[12] = "B +";
+		popupLabels[11] = "BORDER";
+		popupLabels[12] = "";
 		popupLabels[13] = style.gradientDirection == HudAppearanceConfig.GradientDirection.HORIZONTAL ? "GRAD H"
 				: "GRAD V";
 		popupLabels[14] = style.textAlignment == HudAppearanceConfig.TextAlignment.LEFT ? "ALIGN L"
@@ -278,10 +428,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		popupLabels[17] = "FPS LOW";
 		popupLabels[18] = style.animationsEnabled ? "ANIM ON" : "ANIM OFF";
 		popupLabels[19] = "ANCHOR";
-		popupLabels[20] = "X -";
-		popupLabels[21] = "X +";
-		popupLabels[22] = "Y -";
-		popupLabels[23] = "Y +";
+		popupLabels[20] = "X OFFSET";
+		popupLabels[21] = "";
+		popupLabels[22] = "Y OFFSET";
+		popupLabels[23] = "";
 	}
 
 	private boolean overlaps(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
@@ -312,9 +462,17 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 			return;
 		}
 		layoutControls();
+		if(button == 0 && selectedElement != null && isScaleSlider(mouseX, mouseY)) {
+			adjustingScale = true;
+			updateScaleFromMouse(mouseX);
+			return;
+		}
 		int toolbarControl = findToolbarControl(mouseX, mouseY);
 		if(toolbarControl >= 0) {
 			handleToolbarAction(TOOLBAR_IDS[toolbarControl]);
+			return;
+		}
+		if(button == 0 && selectedElement != null && startPopupSlider(mouseX, mouseY)) {
 			return;
 		}
 		int popupControl = selectedElement == null ? -1 : findPopupControl(mouseX, mouseY);
@@ -340,6 +498,9 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private int findToolbarControl(int mouseX, int mouseY) {
 		for(int i = 0; i < TOOLBAR_BUTTONS; ++i) {
+			if(i == 1 || i == 3) {
+				continue;
+			}
 			if(contains(toolbarX[i], toolbarY[i], toolbarWidth[i], toolbarHeight[i], mouseX, mouseY)) {
 				return i;
 			}
@@ -502,6 +663,14 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	@Override
 	protected void mouseClickMove(int mouseX, int mouseY, int button, long elapsed) {
+		if(activePopupSlider >= 0 && (button == 0 || button == 12345)) {
+			updatePopupSlider(mouseX);
+			return;
+		}
+		if(adjustingScale && selectedElement != null && (button == 0 || button == 12345)) {
+			updateScaleFromMouse(mouseX);
+			return;
+		}
 		if(dragging && selectedElement != null && (button == 0 || button == 12345)) {
 			HudManager hudManager = pvpClient.getHudManager();
 			hudManager.moveElement(selectedElement, mouseX - dragOffsetX, mouseY - dragOffsetY, resolution);
@@ -514,9 +683,28 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	protected void mouseReleased(int mouseX, int mouseY, int button) {
 		if(button == 0 || button == 12345) {
 			dragging = false;
+			adjustingScale = false;
+			activePopupSlider = -1;
 			guideX = -1;
 			guideY = -1;
 		}
+	}
+
+	private boolean isScaleSlider(int mouseX, int mouseY) {
+		int x = toolbarX[1];
+		int y = toolbarY[1];
+		int width = toolbarX[3] + toolbarWidth[3] - x;
+		return contains(x, y, width, toolbarHeight[1], mouseX, mouseY);
+	}
+
+	private void updateScaleFromMouse(int mouseX) {
+		int x = toolbarX[1] + 4;
+		int width = Math.max(1, toolbarX[3] + toolbarWidth[3] - toolbarX[1] - 8);
+		float fraction = Math.max(0.0f, Math.min(1.0f, (mouseX - x) / (float) width));
+		float scale = 0.5f + fraction * 2.5f;
+		HudElementConfig config = pvpClient.getHudManager().getElementConfig(selectedElement);
+		config.scale = Math.max(0.5f, Math.min(3.0f, Math.round(scale * 100.0f) / 100.0f));
+		pvpClient.getConfigStore().markDirty();
 	}
 
 	private void updateGuides(HudElementConfig elementConfig) {
@@ -574,8 +762,8 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private void closeEditor() {
 		pvpClient.getConfigStore().saveNow();
-		mc.displayGuiScreen(null);
-		if(mc.currentScreen == null) {
+		mc.displayGuiScreen(parent);
+		if(parent == null && mc.currentScreen == null) {
 			mc.setIngameFocus();
 		}
 	}

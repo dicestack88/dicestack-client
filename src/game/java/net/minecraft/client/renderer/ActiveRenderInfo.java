@@ -63,6 +63,10 @@ public class ActiveRenderInfo {
 	 * entity look angles and 1st/3rd person view mode
 	 */
 	public static void updateRenderInfo(EntityPlayer entityplayerIn, boolean parFlag) {
+		updateRenderInfo(entityplayerIn, parFlag, entityplayerIn.rotationYaw, entityplayerIn.rotationPitch);
+	}
+
+	public static void updateRenderInfo(EntityPlayer entityplayerIn, boolean parFlag, float yaw, float pitch) {
 		GlStateManager.getFloat(GL_MODELVIEW_MATRIX, MODELVIEW);
 		GlStateManager.getFloat(GL_PROJECTION_MATRIX, PROJECTION);
 		EaglercraftGPU.glGetInteger(GL_VIEWPORT, VIEWPORT);
@@ -71,8 +75,8 @@ public class ActiveRenderInfo {
 		GlStateManager.gluUnProject(f, f1, 0.0F, MODELVIEW, PROJECTION, VIEWPORT, OBJECTCOORDS);
 		position = new Vec3((double) OBJECTCOORDS[0], (double) OBJECTCOORDS[1], (double) OBJECTCOORDS[2]);
 		int i = parFlag ? 1 : 0;
-		float f2 = entityplayerIn.rotationPitch;
-		float f3 = entityplayerIn.rotationYaw;
+		float f2 = pitch;
+		float f3 = yaw;
 		rotationX = MathHelper.cos(f3 * 3.1415927F / 180.0F) * (float) (1 - i * 2);
 		rotationZ = MathHelper.sin(f3 * 3.1415927F / 180.0F) * (float) (1 - i * 2);
 		rotationYZ = -rotationZ * MathHelper.sin(f2 * 3.1415927F / 180.0F) * (float) (1 - i * 2);

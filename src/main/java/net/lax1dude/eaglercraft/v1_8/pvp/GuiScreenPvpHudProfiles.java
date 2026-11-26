@@ -6,6 +6,8 @@ import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 
 public final class GuiScreenPvpHudProfiles extends GuiScreen {
 
@@ -53,13 +55,13 @@ public final class GuiScreenPvpHudProfiles extends GuiScreen {
 		}
 		int buttonWidth = (panelWidth - 40) / 3;
 		int rowY = panelY + 100;
-		buttonList.add(new GuiButton(1, panelX + 12, rowY, buttonWidth, 20, "Save / Update"));
-		buttonList.add(new GuiButton(2, panelX + 16 + buttonWidth, rowY, buttonWidth, 20, "< Profile"));
-		buttonList.add(new GuiButton(3, panelX + 20 + buttonWidth * 2, rowY, buttonWidth, 20, "Profile >"));
+		buttonList.add(new PvpGuiButton(1, panelX + 12, rowY, buttonWidth, 20, "Save / Update"));
+		buttonList.add(new PvpGuiButton(2, panelX + 16 + buttonWidth, rowY, buttonWidth, 20, "< Profile"));
+		buttonList.add(new PvpGuiButton(3, panelX + 20 + buttonWidth * 2, rowY, buttonWidth, 20, "Profile >"));
 		int secondY = rowY + 28;
-		buttonList.add(new GuiButton(4, panelX + 12, secondY, buttonWidth, 20, "Apply"));
-		buttonList.add(new GuiButton(5, panelX + 16 + buttonWidth, secondY, buttonWidth, 20, "Delete"));
-		buttonList.add(new GuiButton(6, panelX + 20 + buttonWidth * 2, secondY, buttonWidth, 20, "Back"));
+		buttonList.add(new PvpGuiButton(4, panelX + 12, secondY, buttonWidth, 20, "Apply"));
+		buttonList.add(new PvpGuiButton(5, panelX + 16 + buttonWidth, secondY, buttonWidth, 20, "Delete"));
+		buttonList.add(new PvpGuiButton(6, panelX + 20 + buttonWidth * 2, secondY, buttonWidth, 20, "Back"));
 		for(int i = 1; i < buttonList.size() - 1; ++i) {
 			buttonList.get(i).enabled = !profiles.isEmpty();
 		}
@@ -73,8 +75,18 @@ public final class GuiScreenPvpHudProfiles extends GuiScreen {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xF0121724);
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + 3, 0xFF31C48D);
+		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
+		int start = HudRenderer.withAlpha(appearance.gradientStart,
+				Math.max(0.88f, appearance.backgroundOpacity));
+		int end = HudRenderer.withAlpha(appearance.gradientEnd,
+				Math.max(0.88f, appearance.backgroundOpacity));
+		if(appearance.preset == HudAppearanceConfig.Preset.MODERN_GLASS && appearance.gradientEnabled) {
+			drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start, end);
+		}else {
+			drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start);
+		}
+		drawRect(panelX, panelY, panelX + panelWidth, panelY + Math.max(2, appearance.borderThickness),
+				HudRenderer.withAlpha(appearance.accentColor, Math.max(0.72f, appearance.borderOpacity)));
 		drawCenteredString(fontRendererObj, "DICESTACK  /  HUD PROFILES", width / 2, panelY + 14, 0xFFFFFFFF);
 		drawString(fontRendererObj, "Profile name", panelX + 16, panelY + 43, 0xFF9BA8B8);
 		nameField.drawTextBox();

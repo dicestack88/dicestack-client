@@ -1460,7 +1460,7 @@ public class Minecraft implements IThreadListener {
 					} else {
 						if (this.gameSettings.keyBindPvpHudManager.isPressed()) {
 							if (this.theWorld != null && this.thePlayer != null && this.pvpClient != null) {
-								this.pvpClient.openHudModuleManager();
+								this.pvpClient.openClientMenu();
 							}
 						} else if (this.gameSettings.keyBindPvpHudEditor.isPressed()) {
 							if (this.theWorld != null && this.thePlayer != null && this.pvpClient != null) {

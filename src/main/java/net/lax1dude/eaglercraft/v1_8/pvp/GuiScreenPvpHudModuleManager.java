@@ -7,6 +7,8 @@ import java.util.Locale;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElementConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudManager;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudModuleInfo;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
@@ -31,6 +33,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private static final int BUTTON_PROFILES = 13;
 
 	private final PvpClient pvpClient;
+	private final GuiScreen parent;
 	private final List<HudModuleInfo> filteredModules = new ArrayList<>();
 	private HudModuleInfo.Category category = HudModuleInfo.Category.CORE;
 	private HudModuleInfo selectedModule;
@@ -50,7 +53,17 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private boolean favoritesOnly;
 
 	public GuiScreenPvpHudModuleManager(PvpClient pvpClient) {
+		this(pvpClient, null);
+	}
+
+	public GuiScreenPvpHudModuleManager(PvpClient pvpClient, GuiScreen parent) {
+		this(pvpClient, parent, "");
+	}
+
+	public GuiScreenPvpHudModuleManager(PvpClient pvpClient, GuiScreen parent, String initialSearch) {
 		this.pvpClient = pvpClient;
+		this.parent = parent;
+		this.previousSearch = initialSearch == null ? "" : initialSearch;
 	}
 
 	@Override
@@ -72,31 +85,31 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		int tabWidth = (panelWidth - 24) / HudModuleInfo.Category.values().length;
 		HudModuleInfo.Category[] categories = HudModuleInfo.Category.values();
 		for(int i = 0; i < categories.length; ++i) {
-			buttonList.add(new GuiButton(BUTTON_CATEGORY_BASE + i, tabX + i * tabWidth, panelY + 37, tabWidth - 3, 20,
+			buttonList.add(new PvpGuiButton(BUTTON_CATEGORY_BASE + i, tabX + i * tabWidth, panelY + 37, tabWidth - 3, 20,
 					categories[i].getDisplayName()));
 		}
 		updateCategoryButtons();
-		buttonList.add(new GuiButton(BUTTON_FAVORITES_ONLY, panelX + listWidth - 60, panelY + 68, 72, 20,
+		buttonList.add(new PvpGuiButton(BUTTON_FAVORITES_ONLY, panelX + listWidth - 60, panelY + 68, 72, 20,
 				favoritesOnly ? "Favourites" : "All"));
 
 		int sideX = panelX + listWidth + 26;
-		buttonList.add(new GuiButton(BUTTON_SCALE_DOWN, sideX, listY + 116, 40, 20, "-"));
-		buttonList.add(new GuiButton(BUTTON_SCALE_UP, sideX + 46, listY + 116, 40, 20, "+"));
-		buttonList.add(new GuiButton(BUTTON_APPEARANCE_OVERRIDE, sideX, listY + 176, 86, 20, "Appearance"));
-		buttonList.add(new GuiButton(BUTTON_THEME_PRESET, sideX, listY + 200, 86, 20, "Preset"));
-		buttonList.add(new GuiButton(BUTTON_FAVORITE, sideX, listY + 224, 86, 20, "Favourite"));
-		buttonList.add(previousButton = new GuiButton(BUTTON_PREVIOUS, listX, panelY + panelHeight - 88, 52, 20, "<"));
-		buttonList.add(nextButton = new GuiButton(BUTTON_NEXT, listX + 58, panelY + panelHeight - 88, 52, 20, ">"));
+		buttonList.add(new PvpGuiButton(BUTTON_SCALE_DOWN, sideX, listY + 116, 40, 20, "-"));
+		buttonList.add(new PvpGuiButton(BUTTON_SCALE_UP, sideX + 46, listY + 116, 40, 20, "+"));
+		buttonList.add(new PvpGuiButton(BUTTON_APPEARANCE_OVERRIDE, sideX, listY + 176, 86, 20, "Appearance"));
+		buttonList.add(new PvpGuiButton(BUTTON_THEME_PRESET, sideX, listY + 200, 86, 20, "Preset"));
+		buttonList.add(new PvpGuiButton(BUTTON_FAVORITE, sideX, listY + 224, 86, 20, "Favourite"));
+		buttonList.add(previousButton = new PvpGuiButton(BUTTON_PREVIOUS, listX, panelY + panelHeight - 88, 52, 20, "<"));
+		buttonList.add(nextButton = new PvpGuiButton(BUTTON_NEXT, listX + 58, panelY + panelHeight - 88, 52, 20, ">"));
 		int footerY = panelY + panelHeight - 30;
 		int footerWidth = (panelWidth - 48) / 5;
-		buttonList.add(new GuiButton(BUTTON_EDIT_LAYOUT, panelX + 12, footerY, footerWidth, 20, "Edit HUD Layout"));
-		buttonList.add(new GuiButton(BUTTON_DISABLE_ALL, panelX + 16 + footerWidth, footerY, footerWidth, 20,
+		buttonList.add(new PvpGuiButton(BUTTON_EDIT_LAYOUT, panelX + 12, footerY, footerWidth, 20, "Edit HUD Layout"));
+		buttonList.add(new PvpGuiButton(BUTTON_DISABLE_ALL, panelX + 16 + footerWidth, footerY, footerWidth, 20,
 				"Disable All"));
-		buttonList.add(new GuiButton(BUTTON_RESET_DEFAULTS, panelX + 20 + footerWidth * 2, footerY, footerWidth, 20,
+		buttonList.add(new PvpGuiButton(BUTTON_RESET_DEFAULTS, panelX + 20 + footerWidth * 2, footerY, footerWidth, 20,
 				"Reset Defaults"));
-		buttonList.add(new GuiButton(BUTTON_PROFILES, panelX + 24 + footerWidth * 3, footerY, footerWidth, 20,
+		buttonList.add(new PvpGuiButton(BUTTON_PROFILES, panelX + 24 + footerWidth * 3, footerY, footerWidth, 20,
 				"Profiles"));
-		buttonList.add(new GuiButton(BUTTON_DONE, panelX + 28 + footerWidth * 4, footerY, footerWidth, 20, "Done"));
+		buttonList.add(new PvpGuiButton(BUTTON_DONE, panelX + 28 + footerWidth * 4, footerY, footerWidth, 20, "Done"));
 		refreshModules();
 	}
 
@@ -108,8 +121,18 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xF0121724);
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + 3, 0xFF31C48D);
+		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
+		int start = HudRenderer.withAlpha(appearance.gradientStart,
+				Math.max(0.88f, appearance.backgroundOpacity));
+		int end = HudRenderer.withAlpha(appearance.gradientEnd,
+				Math.max(0.88f, appearance.backgroundOpacity));
+		if(appearance.preset == HudAppearanceConfig.Preset.MODERN_GLASS && appearance.gradientEnabled) {
+			drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start, end);
+		}else {
+			drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start);
+		}
+		drawRect(panelX, panelY, panelX + panelWidth, panelY + Math.max(2, appearance.borderThickness),
+				HudRenderer.withAlpha(appearance.accentColor, Math.max(0.72f, appearance.borderOpacity)));
 		fontRendererObj.drawStringWithShadow("DICESTACK  /  HUD MODULES", panelX + 12, panelY + 12, 0xFFFFFFFF);
 		fontRendererObj.drawStringWithShadow("Search modules and configure your active HUD", panelX + 12, panelY + 25,
 				0xFF9BA8B8);
@@ -176,7 +199,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
 		switch(button.id) {
 		case BUTTON_EDIT_LAYOUT:
-			pvpClient.openHudEditor();
+			pvpClient.openHudEditor(this);
 			break;
 		case BUTTON_DISABLE_ALL:
 			for(int i = 0; i < pvpClient.getHudManager().getElementCount(); ++i) {
@@ -300,7 +323,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		for(int i = 0; i < manager.getElementCount(); ++i) {
 			HudModuleInfo module = manager.getModuleInfo(i);
 			boolean favorite = manager.getElementConfig(module.element).favorite;
-			if(module.category == category && module.name.toLowerCase(Locale.ROOT).contains(query)
+			if((!query.isEmpty() || module.category == category) && module.name.toLowerCase(Locale.ROOT).contains(query)
 					&& (!favoritesOnly || favorite)) {
 				filteredModules.add(module);
 			}
@@ -344,8 +367,8 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
 	private void closeManager() {
 		pvpClient.getConfigStore().saveNow();
-		mc.displayGuiScreen(null);
-		if(mc.currentScreen == null) {
+		mc.displayGuiScreen(parent);
+		if(parent == null && mc.currentScreen == null) {
 			mc.setIngameFocus();
 		}
 	}

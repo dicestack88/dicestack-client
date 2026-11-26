@@ -1,6 +1,8 @@
 package net.lax1dude.eaglercraft.v1_8.pvp;
 
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
@@ -14,7 +16,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
 			{ 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 58, 59, 65, 66, 67, 68, 69, 102, 104 },
-			{ 30, 31, 32, 33, 34, 35, 38, 70, 71, 72, 93, 94, 95, 96, 100 },
+			{ 30, 31, 32, 33, 34, 35, 38, 70, 71, 72, 73, 74, 75, 76, 93, 94, 95, 96, 100 },
 			{ 40, 41, 42, 43, 44, 45, 46, 47 },
 			{ 50, 51, 52, 53, 54, 55, 56, 57 },
 			{ 60, 61, 62, 63, 64, 78, 101 },
@@ -36,14 +38,20 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	private int page;
 
 	public GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent) {
+		this(pvpClient, parent, 0, "");
+	}
+
+	public GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent, int initialPage, String initialSearch) {
 		this.pvpClient = pvpClient;
 		this.parent = parent;
+		this.page = Math.max(0, Math.min(PAGES.length - 1, initialPage));
+		this.searchText = initialSearch == null ? "" : initialSearch;
 	}
 
 	@Override
 	public void initGui() {
-		panelWidth = Math.min(390, Math.max(1, width - 8));
-		panelHeight = Math.min(226, Math.max(112, height - 8));
+		panelWidth = Math.min(560, Math.max(1, width - 8));
+		panelHeight = Math.min(340, Math.max(112, height - 8));
 		panelX = (width - panelWidth) / 2;
 		panelY = Math.max(2, (height - panelHeight) / 2);
 		buttonList.clear();
@@ -52,7 +60,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		searchField.setText(searchText);
 		List<Integer> displayedIds = getDisplayedButtonIds();
 		int rows = (displayedIds.size() + 1) / 2;
-		rowHeight = Math.max(10, Math.min(22,
+		rowHeight = Math.max(12, Math.min(22,
 				(panelHeight - 98 - Math.max(0, rows - 1) * 2) / Math.max(1, rows)));
 		int gap = 4;
 		int buttonWidth = Math.max(1, (panelWidth - 24 - gap) / 2);
@@ -62,13 +70,15 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 			int column = i % 2;
 			int row = i / 2;
 			int id = displayedIds.get(i);
-			buttonList.add(new GuiButton(id, buttonX + column * (buttonWidth + gap),
-					startY + row * (rowHeight + 2), buttonWidth, rowHeight, getLabel(id)));
+			int x = buttonX + column * (buttonWidth + gap);
+			int y = startY + row * (rowHeight + 2);
+			PvpSliderButton slider = createSlider(id, x, y, buttonWidth, rowHeight);
+			buttonList.add(slider == null ? new PvpGuiButton(id, x, y, buttonWidth, rowHeight, getLabel(id)) : slider);
 		}
 		int footerY = panelY + panelHeight - 25;
-		buttonList.add(new GuiButton(12, panelX + 8, footerY, 42, 20, "<"));
-		buttonList.add(new GuiButton(13, panelX + 54, footerY, 42, 20, ">"));
-		buttonList.add(new GuiButton(11, panelX + panelWidth - 82, footerY, 74, 20, "Done"));
+		buttonList.add(new PvpGuiButton(12, panelX + 8, footerY, 42, 20, "<"));
+		buttonList.add(new PvpGuiButton(13, panelX + 54, footerY, 42, 20, ">"));
+		buttonList.add(new PvpGuiButton(11, panelX + panelWidth - 82, footerY, 74, 20, "Done"));
 	}
 
 	@Override
@@ -79,13 +89,21 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
-		drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight,
-				0xEE172638, 0xE80F1722);
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + 1, 0xFF53D6A3);
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + 2, 0xFF53D6A3);
-		drawRect(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, 0xAA53D6A3);
-		drawRect(panelX, panelY, panelX + 1, panelY + panelHeight, 0xAA53D6A3);
-		drawRect(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, 0xAA53D6A3);
+		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
+		int start = HudRenderer.withAlpha(appearance.gradientStart,
+				Math.max(0.88f, appearance.backgroundOpacity));
+		int end = HudRenderer.withAlpha(appearance.gradientEnd,
+				Math.max(0.88f, appearance.backgroundOpacity));
+		if(appearance.preset == HudAppearanceConfig.Preset.MODERN_GLASS && appearance.gradientEnabled) {
+			drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start, end);
+		}else {
+			drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start);
+		}
+		int border = HudRenderer.withAlpha(appearance.borderColor, Math.max(0.72f, appearance.borderOpacity));
+		drawRect(panelX, panelY, panelX + panelWidth, panelY + Math.max(1, appearance.borderThickness), border);
+		drawRect(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, border);
+		drawRect(panelX, panelY, panelX + 1, panelY + panelHeight, border);
+		drawRect(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, border);
 		drawCenteredString(fontRendererObj, "DICESTACK  /  " + pageTitle(), width / 2, panelY + 9, 0xFFF1F7F5);
 		if(searchField.getText().isEmpty()) {
 			fontRendererObj.drawStringWithShadow("Search all settings...", searchField.xPosition + 4,
@@ -100,6 +118,9 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	@Override
 	protected void actionPerformed(GuiButton button) {
+		if(button instanceof PvpSliderButton) {
+			return;
+		}
 		PvpConfig config = pvpClient.getConfigStore().getConfig();
 		switch(button.id) {
 		case 11:
@@ -275,12 +296,14 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	}
 
 	private List<Integer> getDisplayedButtonIds() {
+		List<Integer> displayed = new ArrayList<>();
 		if(searchText.isEmpty()) {
-			List<Integer> result = new ArrayList<>();
 			for(int id : PAGES[page]) {
-				result.add(id);
+				if(!isSliderCompanion(id)) {
+					displayed.add(id);
+				}
 			}
-			return result;
+			return displayed;
 		}
 		List<Integer> matches = getFilteredSettingIds();
 		int start = Math.min(page * 12, matches.size());
@@ -292,12 +315,209 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		String query = searchText.toLowerCase(Locale.ROOT);
 		for(int[] ids : PAGES) {
 			for(int id : ids) {
-				if(getLabel(id).toLowerCase(Locale.ROOT).contains(query)) {
+				if(!isSliderCompanion(id) && getSearchLabel(id).toLowerCase(Locale.ROOT).contains(query)) {
 					matches.add(id);
 				}
 			}
 		}
 		return matches;
+	}
+
+	private boolean isSliderCompanion(int id) {
+		switch(id) {
+		case 6:
+		case 43:
+		case 45:
+		case 47:
+		case 51:
+		case 55:
+		case 59:
+		case 64:
+		case 66:
+		case 68:
+		case 87:
+		case 89:
+		case 91:
+		case 93:
+		case 96:
+		case 98:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	private String getSearchLabel(int id) {
+		String sliderLabel = getSliderLabel(id);
+		if(sliderLabel == null) {
+			return getLabel(id);
+		}
+		return sliderLabel + " " + getLabel(id) + " " + getLabel(getSliderCompanion(id));
+	}
+
+	private int getSliderCompanion(int id) {
+		switch(id) {
+		case 5: return 6;
+		case 42: return 43;
+		case 44: return 45;
+		case 46: return 47;
+		case 50: return 51;
+		case 54: return 55;
+		case 58: return 59;
+		case 63: return 64;
+		case 65: return 66;
+		case 67: return 68;
+		case 69: return 93;
+		case 86: return 87;
+		case 88: return 89;
+		case 90: return 91;
+		case 95: return 96;
+		case 97: return 98;
+		default: return -1;
+		}
+	}
+
+	private String getSliderLabel(int id) {
+		switch(id) {
+		case 5: return "Zoom Strength";
+		case 42: return "Crosshair Size";
+		case 44: return "Crosshair Thickness";
+		case 46: return "Crosshair Gap";
+		case 50: return "Crosshair Opacity";
+		case 54: return "Low Health Threshold";
+		case 58: return "Custom FOV";
+		case 63: return "Chat Opacity";
+		case 65: return "Third-Person Distance";
+		case 67: return "Zoom Smoothness";
+		case 69: return "Local Time";
+		case 86: return "Held Item Scale";
+		case 88: return "Held Item X Offset";
+		case 90: return "Held Item Y Offset";
+		case 95: return "Block Outline Thickness";
+		case 97: return "Glint Intensity";
+		default: return null;
+		}
+	}
+
+	private PvpSliderButton createSlider(int id, int x, int y, int width, int height) {
+		String label = getSliderLabel(id);
+		if(label == null) {
+			return null;
+		}
+		float minimum;
+		float maximum;
+		float step;
+		switch(id) {
+		case 5: minimum = 4.0f; maximum = 32.0f; step = 0.5f; break;
+		case 42: minimum = 1.0f; maximum = 16.0f; step = 1.0f; break;
+		case 44: minimum = 1.0f; maximum = 6.0f; step = 1.0f; break;
+		case 46: minimum = 0.0f; maximum = 12.0f; step = 1.0f; break;
+		case 50: minimum = 0.1f; maximum = 1.0f; step = 0.01f; break;
+		case 54: minimum = 1.0f; maximum = 20.0f; step = 0.5f; break;
+		case 58: minimum = 30.0f; maximum = 110.0f; step = 1.0f; break;
+		case 63: minimum = 0.0f; maximum = 1.0f; step = 0.01f; break;
+		case 65: minimum = 2.0f; maximum = 12.0f; step = 0.1f; break;
+		case 67: minimum = 0.0f; maximum = 100.0f; step = 1.0f; break;
+		case 69: minimum = 0.0f; maximum = 24000.0f; step = 100.0f; break;
+		case 86: minimum = 0.5f; maximum = 2.0f; step = 0.05f; break;
+		case 88:
+		case 90: minimum = -1.0f; maximum = 1.0f; step = 0.01f; break;
+		case 95: minimum = 1.0f; maximum = 8.0f; step = 1.0f; break;
+		case 97: minimum = 0.0f; maximum = 2.0f; step = 0.01f; break;
+		default: return null;
+		}
+		return new PvpSliderButton(id, x, y, width, height, label, minimum, maximum, step,
+				getSliderValue(id), value -> setSliderValue(id, value),
+				value -> formatSliderValue(id, value));
+	}
+
+	private float getSliderValue(int id) {
+		PvpConfig config = pvpClient.getConfigStore().getConfig();
+		switch(id) {
+		case 5: return config.zoomStrength;
+		case 42: return config.crosshairSize;
+		case 44: return config.crosshairThickness;
+		case 46: return config.crosshairGap;
+		case 50: return config.crosshairOpacity;
+		case 54: return config.lowHealthThreshold;
+		case 58: return config.customFov;
+		case 63: return mc.gameSettings.chatOpacity;
+		case 65: return config.thirdPersonDistance;
+		case 67: return config.zoomSmoothness;
+		case 69: return config.localTime;
+		case 86: return config.heldItemScale;
+		case 88: return config.heldItemOffsetX;
+		case 90: return config.heldItemOffsetY;
+		case 95: return config.blockOutlineThickness;
+		case 97: return config.glintIntensity;
+		default: return 0.0f;
+		}
+	}
+
+	private void setSliderValue(int id, float value) {
+		PvpConfig config = pvpClient.getConfigStore().getConfig();
+		switch(id) {
+		case 5: config.zoomStrength = value; break;
+		case 42: config.crosshairSize = Math.round(value); break;
+		case 44: config.crosshairThickness = Math.round(value); break;
+		case 46: config.crosshairGap = Math.round(value); break;
+		case 50: config.crosshairOpacity = value; break;
+		case 54: config.lowHealthThreshold = value; break;
+		case 58: config.customFov = value; break;
+		case 63:
+			mc.gameSettings.chatOpacity = value;
+			mc.gameSettings.saveOptions();
+			break;
+		case 65: config.thirdPersonDistance = value; break;
+		case 67: config.zoomSmoothness = Math.round(value); break;
+		case 69: config.localTime = Math.round(value); break;
+		case 86: config.heldItemScale = value; break;
+		case 88: config.heldItemOffsetX = value; break;
+		case 90: config.heldItemOffsetY = value; break;
+		case 95: config.blockOutlineThickness = Math.round(value); break;
+		case 97: config.glintIntensity = value; break;
+		default: return;
+		}
+		pvpClient.getConfigStore().markDirty();
+	}
+
+	private String formatSliderValue(int id, float value) {
+		switch(id) {
+		case 5: return oneDecimal(value) + "x";
+		case 42:
+		case 44:
+		case 46:
+		case 95: return Integer.toString(Math.round(value)) + " px";
+		case 50:
+		case 63:
+		case 67: return Math.round(value * (id == 67 ? 1.0f : 100.0f)) + "%";
+		case 54: return oneDecimal(value) + " HP";
+		case 58: return Math.round(value) + " deg";
+		case 65: return oneDecimal(value) + " blocks";
+		case 69: return formatWorldTime(Math.round(value));
+		case 86:
+		case 97: return twoDecimal(value) + "x";
+		case 88:
+		case 90: return twoDecimal(value);
+		default: return Float.toString(value);
+		}
+	}
+
+	private String oneDecimal(float value) {
+		return Float.toString(Math.round(value * 10.0f) / 10.0f);
+	}
+
+	private String twoDecimal(float value) {
+		int hundredths = Math.round(Math.abs(value) * 100.0f);
+		return (value < 0.0f ? "-" : "") + hundredths / 100 + "."
+				+ (hundredths % 100 < 10 ? "0" : "") + hundredths % 100;
+	}
+
+	private String formatWorldTime(int ticks) {
+		int minuteOfDay = (ticks % 24000) * 1440 / 24000;
+		int hours = minuteOfDay / 60;
+		int minutes = minuteOfDay % 60;
+		return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes;
 	}
 
 	private String getLabel(int id) {
