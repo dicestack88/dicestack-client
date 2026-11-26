@@ -36,6 +36,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private String[] popupLabels = new String[POPUP_BUTTONS];
 	private ScaledResolution resolution;
 	private HudElement selectedElement;
+	private HudElement initialSelectedElement;
 	private String instructionText = "";
 	private int toolbarPanelX;
 	private int toolbarPanelY;
@@ -45,6 +46,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private int popupPanelY;
 	private int popupPanelWidth;
 	private int popupPanelHeight;
+	private int popupContentTop;
 	private int dragOffsetX;
 	private int dragOffsetY;
 	private int guideX = -1;
@@ -62,13 +64,22 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		this.parent = parent;
 	}
 
+	public GuiScreenPvpHudEditor(PvpClient pvpClient, GuiScreen parent, HudElement selectedElement) {
+		this.pvpClient = pvpClient;
+		this.parent = parent;
+		this.initialSelectedElement = selectedElement;
+	}
+
 	@Override
 	public void initGui() {
 		fontRendererObj = PvpUiFontRenderer.get(mc);
 		resolution = new ScaledResolution(mc);
 		instructionText = Keyboard.getKeyName(mc.gameSettings.keyBindPvpHudEditor.getKeyCode())
 				+ " toggles editor; Esc closes";
-		if(selectedElement == null) {
+		if(initialSelectedElement != null) {
+			selectedElement = initialSelectedElement;
+			initialSelectedElement = null;
+		}else if(selectedElement == null) {
 			selectedElement = pvpClient.getHudManager().getElement(0);
 		}
 		updateControlLabels();
@@ -96,7 +107,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		toolbarPanelWidth = Math.min(256, availableWidth);
 		toolbarPanelHeight = 24;
 		toolbarPanelX = (width - toolbarPanelWidth) / 2;
-		toolbarPanelY = Math.max(3, Math.min(height - toolbarPanelHeight - 3, (height - toolbarPanelHeight) / 2));
+		toolbarPanelY = 4;
 		int toolbarInnerWidth = Math.max(1, toolbarPanelWidth - 10);
 		int gap = toolbarInnerWidth >= TOOLBAR_BUTTONS * 25 ? 2 : 1;
 		int buttonWidth = Math.max(1, (toolbarInnerWidth - gap * (TOOLBAR_BUTTONS - 1)) / TOOLBAR_BUTTONS);
@@ -118,43 +129,27 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 			return;
 		}
 		HudManager manager = pvpClient.getHudManager();
-		int elementX = manager.getElementX(selectedElement, resolution);
-		int elementY = manager.getElementY(selectedElement, resolution);
-		int elementWidth = manager.getElementWidth(selectedElement);
-		int elementHeight = manager.getElementHeight(selectedElement);
 		int safeWidth = Math.max(1, width - 8);
-		int columns = safeWidth >= 220 ? 4 : safeWidth >= 165 ? 3 : 2;
-		popupPanelWidth = Math.min(204, safeWidth);
+		int inspectorWidth = safeWidth >= 520 ? 224 : safeWidth >= 280 ? 180 : safeWidth;
+		popupPanelWidth = Math.min(inspectorWidth, safeWidth);
+		popupPanelX = safeWidth >= 280 ? width - popupPanelWidth - 4 : 4;
+		int desiredPopupY = safeWidth >= 280 ? toolbarPanelY + toolbarPanelHeight + 6 : 4;
+		popupPanelY = Math.max(4, Math.min(Math.max(4, height - 40), desiredPopupY));
+		popupPanelHeight = Math.max(1, Math.min(height - popupPanelY - 4,
+				safeWidth >= 280 ? height - popupPanelY - 4 : Math.max(40, height - 8)));
+		popupContentTop = popupPanelY + 18;
+		int columns = safeWidth >= 280 ? popupPanelWidth >= 220 ? 3 : 2 : 2;
 		int rows = (POPUP_BUTTONS + columns - 1) / columns;
 		int gap = 2;
 		int innerWidth = Math.max(1, popupPanelWidth - 10);
 		int cellWidth = Math.max(1, (innerWidth - gap * (columns - 1)) / columns);
-		int rowHeight = Math.max(10, Math.min(16, (height - 20 - gap * (rows - 1)) / rows));
-		popupPanelHeight = Math.min(height - 8, rows * rowHeight + (rows - 1) * gap + 10);
-		int belowY = elementY + elementHeight + 3;
-		int aboveY = elementY - popupPanelHeight - 3;
-		boolean fitsBelow = belowY + popupPanelHeight <= height - 4;
-		boolean fitsAbove = aboveY >= 4;
-		popupPanelY = fitsBelow ? belowY
-				: aboveY >= 4 ? aboveY : Math.max(4, Math.min(height - popupPanelHeight - 4, belowY));
-		popupPanelX = elementX + elementWidth / 2 - popupPanelWidth / 2;
-		popupPanelX = Math.max(4, Math.min(width - popupPanelWidth - 4, popupPanelX));
-		if(overlaps(popupPanelX, popupPanelY, popupPanelWidth, popupPanelHeight,
-				toolbarPanelX, toolbarPanelY, toolbarPanelWidth, toolbarPanelHeight)) {
-			if(popupPanelY == belowY && fitsAbove) {
-				popupPanelY = aboveY;
-			}else if(popupPanelY == aboveY && fitsBelow) {
-				popupPanelY = belowY;
-			}
-		}
-
-		int effectiveRowHeight = Math.max(1,
-				(popupPanelHeight - 10 - gap * (rows - 1)) / rows);
+		int effectiveRowHeight = Math.max(10, Math.min(16,
+				(popupPanelHeight - 28 - gap * (rows - 1)) / rows));
 		for(int i = 0; i < POPUP_BUTTONS; ++i) {
 			int column = i % columns;
 			int row = i / columns;
 			popupXByButton[i] = popupPanelX + 5 + column * (cellWidth + gap);
-			popupYByButton[i] = popupPanelY + 5 + row * (effectiveRowHeight + gap);
+			popupYByButton[i] = popupContentTop + row * (effectiveRowHeight + gap);
 			popupWidthByButton[i] = column == columns - 1
 					? popupPanelX + popupPanelWidth - 5 - popupXByButton[i] : cellWidth;
 			popupHeightByButton[i] = effectiveRowHeight;
@@ -209,6 +204,8 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private void drawAppearancePopup(int mouseX, int mouseY) {
 		drawPanel(popupPanelX, popupPanelY, popupPanelWidth, popupPanelHeight);
+		fontRendererObj.drawStringWithShadow("INSPECTOR",
+				popupPanelX + 5, popupPanelY + 5, 0xFF53D6A3);
 		for(int i = 0; i < POPUP_BUTTONS; ++i) {
 			int id = POPUP_IDS[i];
 			if(id == 18 || id == 23 || id == 32 || id == 34 || id == 36) {
@@ -381,7 +378,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 				+ "  |  drag to position";
 		label = fontRendererObj.trimStringToWidth(label, Math.max(0, width - 8));
 		fontRendererObj.drawStringWithShadow(label, Math.max(4, width / 2 - fontRendererObj.getStringWidth(label) / 2),
-				Math.max(3, toolbarPanelY - 11), 0xFFF1F7F5);
+				toolbarPanelY + toolbarPanelHeight + 3, 0xFFF1F7F5);
 	}
 
 	private void drawElementBounds(HudManager hudManager) {
@@ -398,6 +395,12 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 			Gui.drawRect(x, bottom - 1, right, bottom, color);
 			Gui.drawRect(x, y, x + 1, bottom, color);
 			Gui.drawRect(right - 1, y, right, bottom, color);
+			if(element == selectedElement) {
+				HudRenderer.drawRoundedRect(x - 2, y - 2, 5, 5, 2, 0xFFFFFFFF);
+				HudRenderer.drawRoundedRect(right - 3, y - 2, 5, 5, 2, 0xFFFFFFFF);
+				HudRenderer.drawRoundedRect(x - 2, bottom - 3, 5, 5, 2, 0xFFFFFFFF);
+				HudRenderer.drawRoundedRect(right - 3, bottom - 3, 5, 5, 2, 0xFFFFFFFF);
+			}
 		}
 	}
 

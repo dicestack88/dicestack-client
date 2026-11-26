@@ -15,16 +15,20 @@ public final class PvpUiFontRenderer {
 
 	public static FontRenderer get(Minecraft minecraft) {
 		if(fontRenderer == null) {
-			String fontTexture = EaglercraftGPU.checkInstancingCapable()
-					? "dicestack:textures/font/ui_sans.png"
-					: "dicestack:textures/font/ui_sans_fallback.png";
-			FontRenderer renderer = EaglerFontRenderer.createSupportedFontRenderer(minecraft.gameSettings,
-					new ResourceLocation(fontTexture),
-					minecraft.getTextureManager(), false);
-			renderer.setUnicodeFlag(false);
-			renderer.setBidiFlag(false);
-			minecraft.registerResourceReloadListener(renderer);
-			fontRenderer = renderer;
+			try {
+				String fontTexture = EaglercraftGPU.checkInstancingCapable()
+						? "dicestack:textures/font/ui_sans.png"
+						: "dicestack:textures/font/ui_sans_fallback.png";
+				FontRenderer renderer = EaglerFontRenderer.createSupportedFontRenderer(minecraft.gameSettings,
+						new ResourceLocation(fontTexture),
+						minecraft.getTextureManager(), false);
+				renderer.setUnicodeFlag(false);
+				renderer.setBidiFlag(false);
+				minecraft.registerResourceReloadListener(renderer);
+				fontRenderer = renderer;
+			}catch(Throwable ex) {
+				fontRenderer = minecraft.fontRendererObj;
+			}
 		}
 		return fontRenderer;
 	}
