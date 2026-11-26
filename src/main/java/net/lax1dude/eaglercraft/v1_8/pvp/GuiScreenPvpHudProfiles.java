@@ -4,12 +4,13 @@ import java.util.List;
 
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 
-public final class GuiScreenPvpHudProfiles extends GuiScreen {
+public final class GuiScreenPvpHudProfiles extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private final PvpClient pvpClient;
 	private final GuiScreen parent;

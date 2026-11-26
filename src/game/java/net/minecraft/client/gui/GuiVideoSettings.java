@@ -30,7 +30,7 @@ import net.minecraft.client.settings.GameSettings;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiVideoSettings extends GuiScreen {
+public class GuiVideoSettings extends GuiScreen implements IDicestackBackgroundScreen {
 	private GuiScreen parentGuiScreen;
 	protected String screenTitle = "Video Settings";
 	private GameSettings guiGameSettings;

@@ -27,7 +27,7 @@ import net.minecraft.client.settings.KeyBinding;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiControls extends GuiScreen {
+public class GuiControls extends GuiScreen implements IDicestackBackgroundScreen {
 	private static final GameSettings.Options[] optionsArr = new GameSettings.Options[] {
 			GameSettings.Options.INVERT_MOUSE, GameSettings.Options.SENSITIVITY,
 			GameSettings.Options.EAGLER_TOUCH_CONTROL_OPACITY };

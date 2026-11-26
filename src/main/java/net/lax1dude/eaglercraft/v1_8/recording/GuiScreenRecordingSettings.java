@@ -24,11 +24,12 @@ import net.lax1dude.eaglercraft.v1_8.minecraft.GuiScreenGenericErrorMessage;
 import net.lax1dude.eaglercraft.v1_8.sp.gui.GuiSlider2;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MathHelper;
 
-public class GuiScreenRecordingSettings extends GuiScreen {
+public class GuiScreenRecordingSettings extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final Logger logger = LogManager.getLogger("GuiScreenRecordingSettings");
 

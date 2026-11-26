@@ -39,7 +39,7 @@ import net.minecraft.client.resources.ResourcePackRepository;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiScreenResourcePacks extends GuiScreen {
+public class GuiScreenResourcePacks extends GuiScreen implements IDicestackBackgroundScreen {
 	private static final Logger logger = LogManager.getLogger();
 	private final GuiScreen parentScreen;
 	private List<ResourcePackListEntry> availableResourcePacks;

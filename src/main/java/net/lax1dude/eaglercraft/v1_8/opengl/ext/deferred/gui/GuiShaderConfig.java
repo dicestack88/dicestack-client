@@ -26,9 +26,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.resources.I18n;
 
-public class GuiShaderConfig extends GuiScreen {
+public class GuiShaderConfig extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final Logger logger = LogManager.getLogger();
 

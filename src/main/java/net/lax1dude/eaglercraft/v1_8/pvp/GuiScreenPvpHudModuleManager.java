@@ -10,10 +10,11 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudModuleInfo;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 
-public final class GuiScreenPvpHudModuleManager extends GuiScreen {
+public final class GuiScreenPvpHudModuleManager extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final int PAGE_SIZE = 7;
 	private static final int BUTTON_EDIT_LAYOUT = 1;

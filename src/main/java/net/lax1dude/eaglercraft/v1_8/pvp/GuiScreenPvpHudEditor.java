@@ -9,10 +9,11 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudElementConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudManager;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 
-public final class GuiScreenPvpHudEditor extends GuiScreen {
+public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final int TOOLBAR_BUTTONS = 7;
 	private static final int POPUP_BUTTONS = 26;

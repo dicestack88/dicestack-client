@@ -4,6 +4,7 @@ import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public final class GuiScreenPvpQolSettings extends GuiScreen {
+public final class GuiScreenPvpQolSettings extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final int[][] PAGES = {
 			{ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
