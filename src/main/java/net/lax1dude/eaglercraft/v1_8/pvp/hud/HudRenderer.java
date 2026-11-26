@@ -225,7 +225,8 @@ public final class HudRenderer {
 		}else if(style.textAlignment == HudAppearanceConfig.TextAlignment.RIGHT) {
 			textX = x + width - textWidth;
 		}
-		color = withAlpha(style.rainbowEnabled ? rainbowColor(style, text) : color, style.textOpacity);
+		color = withAlpha(style.rainbowEnabled || style.rgbEnabled ? rainbowColor(style, text) : color,
+				style.textOpacity);
 		if(style.textShadow) {
 			font.drawStringWithShadow(text, textX, y, color);
 		}else {
@@ -333,12 +334,14 @@ public final class HudRenderer {
 	}
 
 	private static int rainbowColor(HudAppearanceConfig style, String text) {
-		if(!style.rainbowEnabled) {
+		if(!style.rainbowEnabled && !style.rgbEnabled) {
 			return style.textColor;
 		}
 		long time = System.currentTimeMillis();
-		float hue = ((time / 30L) % 360L) / 360.0f;
-		return hsvToRgb(hue, 0.72f, 1.0f);
+		float hue = ((time / Math.max(1L, (long) (30.0F / style.rgbSpeed))) % 360L) / 360.0f;
+		return hsvToRgb(hue,
+				Math.max(0.0f, Math.min(1.0f, style.rgbSaturation)),
+				Math.max(0.1f, Math.min(1.0f, style.rgbBrightness)));
 	}
 
 	private static int hsvToRgb(float hue, float saturation, float value) {

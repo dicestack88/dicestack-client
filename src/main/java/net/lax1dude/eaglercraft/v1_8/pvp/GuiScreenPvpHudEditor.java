@@ -54,6 +54,8 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private boolean dragging;
 	private boolean adjustingScale;
 	private int activePopupSlider = -1;
+	private PvpColorPicker colorPicker;
+	private int colorPickerProperty = -1;
 
 	public GuiScreenPvpHudEditor(PvpClient pvpClient) {
 		this(pvpClient, null);
@@ -141,7 +143,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		popupPanelY = Math.max(4, Math.min(Math.max(4, height - 40), desiredPopupY));
 		popupPanelHeight = Math.max(1, Math.min(height - popupPanelY - 4,
 				safeWidth >= 280 ? height - popupPanelY - 4 : Math.max(40, height - 8)));
-		popupContentTop = popupPanelY + 18;
+		popupContentTop = popupPanelY + 52;
 		int columns = safeWidth >= 280 ? popupPanelWidth >= 220 ? 3 : 2 : 2;
 		int rows = (POPUP_BUTTONS + columns - 1) / columns;
 		int gap = 2;
@@ -210,6 +212,13 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		drawPanel(popupPanelX, popupPanelY, popupPanelWidth, popupPanelHeight);
 		fontRendererObj.drawStringWithShadow("INSPECTOR",
 				popupPanelX + 5, popupPanelY + 5, 0xFF53D6A3);
+		drawLivePreview();
+		if(colorPicker != null) {
+			colorPicker.setBounds(popupPanelX + 5,
+					Math.max(popupPanelY + 52, popupPanelY + popupPanelHeight - 82),
+					popupPanelWidth - 10, 76);
+			colorPicker.draw(mc, mouseX, mouseY);
+		}
 		for(int i = 0; i < POPUP_BUTTONS; ++i) {
 			int id = POPUP_IDS[i];
 			if(id == 18 || id == 23 || id == 32 || id == 34 || id == 36) {
@@ -347,6 +356,26 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		HudRenderer.drawPanel(style, x, y, panelWidth, panelHeight);
 	}
 
+	private void drawLivePreview() {
+		if(selectedElement == null) {
+			return;
+		}
+		HudManager manager = pvpClient.getHudManager();
+		HudElementConfig element = manager.getElementConfig(selectedElement);
+		HudAppearanceConfig style = getAppearance(element);
+		int previewX = popupPanelX + 5;
+		int previewY = popupPanelY + 18;
+		int previewWidth = popupPanelWidth - 10;
+		int previewHeight = 30;
+		HudRenderer.drawPanel(style, previewX, previewY, previewWidth, previewHeight);
+		String label = "LIVE PREVIEW";
+		int labelWidth = fontRendererObj.getStringWidth(label);
+		fontRendererObj.drawStringWithShadow(label,
+				previewX + (previewWidth - labelWidth) / 2,
+				previewY + (previewHeight - 8) / 2,
+				HudRenderer.withAlpha(style.textColor, style.textOpacity));
+	}
+
 	private void drawControl(int x, int y, int controlWidth, int controlHeight, String label,
 			boolean active, boolean hovered) {
 		int background = active ? 0xFF294538 : hovered ? 0xE12B3B4B : 0xCC202D3A;
@@ -452,6 +481,8 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		popupLabels[21] = "";
 		popupLabels[22] = "Y OFFSET";
 		popupLabels[23] = "";
+		popupLabels[24] = "CORNER";
+		popupLabels[25] = style.rgbEnabled ? "RGB ON" : "RGB OFF";
 	}
 
 	private boolean overlaps(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
@@ -467,6 +498,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		case 14: return style.gradientEnabled;
 		case 18: return style.borderEnabled;
 		case 29: return style.animationsEnabled;
+		case 36: return style.rgbEnabled;
 		default: return false;
 		}
 	}
@@ -478,10 +510,27 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) {
-		if(button != 0 && button != 12345) {
+		if(button != 0 && button != 12345 && button != 1) {
 			return;
 		}
 		layoutControls();
+		if(colorPicker != null && colorPicker.mouseClicked(mc, mouseX, mouseY, button)) {
+			pvpClient.getConfigStore().markDirty();
+			return;
+		}
+		if(button == 1) {
+			HudManager hudManager = pvpClient.getHudManager();
+			HudElement element = hudManager.getElementAt(mouseX, mouseY, resolution);
+			if(element != null) {
+				selectedElement = element;
+				colorPicker = null;
+				colorPickerProperty = -1;
+				dragging = false;
+				updateControlLabels();
+				layoutControls();
+			}
+			return;
+		}
 		if(button == 0 && selectedElement != null && isScaleSlider(mouseX, mouseY)) {
 			adjustingScale = true;
 			updateScaleFromMouse(mouseX);
@@ -593,16 +642,16 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 			style.backgroundEnabled = !style.backgroundEnabled;
 			break;
 		case 13:
-			style.gradientStart = nextColor(style.gradientStart);
+			openColorPicker(13, style.gradientStart);
 			break;
 		case 14:
 			style.gradientEnabled = !style.gradientEnabled;
 			break;
 		case 15:
-			style.gradientEnd = nextColor(style.gradientEnd);
+			openColorPicker(15, style.gradientEnd);
 			break;
 		case 16:
-			style.textColor = nextColor(style.textColor);
+			openColorPicker(16, style.textColor);
 			break;
 		case 17:
 			style.backgroundOpacity = Math.max(0.0f, style.backgroundOpacity - 0.1f);
@@ -614,7 +663,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 			style.borderEnabled = !style.borderEnabled;
 			break;
 		case 21:
-			style.borderColor = nextColor(style.borderColor);
+			openColorPicker(21, style.borderColor);
 			break;
 		case 22:
 			style.borderThickness = Math.max(0, style.borderThickness - 1);
@@ -662,9 +711,31 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		case 34:
 			element.offsetY += anchorRow(element.anchor) == 2 ? -2 : 2;
 			break;
+		case 36:
+			style.rgbEnabled = !style.rgbEnabled;
+			if(style.rgbEnabled) {
+				style.rainbowEnabled = false;
+			}
+			break;
 		}
 		updateControlLabels();
 		pvpClient.getConfigStore().markDirty();
+	}
+
+	private void openColorPicker(final int property, int initialColor) {
+		colorPickerProperty = property;
+		colorPicker = new PvpColorPicker(mc, initialColor, initialColor, color -> {
+			HudElementConfig element = pvpClient.getHudManager().getElementConfig(selectedElement);
+			HudAppearanceConfig style = getAppearance(element);
+			switch(property) {
+			case 13: style.gradientStart = color; break;
+			case 15: style.gradientEnd = color; break;
+			case 16: style.textColor = color; break;
+			case 21: style.borderColor = color; break;
+			}
+			pvpClient.getConfigStore().markDirty();
+			updateControlLabels();
+		});
 	}
 
 	private int nextColor(int color) {
@@ -683,6 +754,9 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	@Override
 	protected void mouseClickMove(int mouseX, int mouseY, int button, long elapsed) {
+		if(colorPicker != null) {
+			colorPicker.mouseClickMove(mouseX, mouseY, button);
+		}
 		if(activePopupSlider >= 0 && (button == 0 || button == 12345)) {
 			updatePopupSlider(mouseX);
 			return;
@@ -701,6 +775,9 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	@Override
 	protected void mouseReleased(int mouseX, int mouseY, int button) {
+		if(colorPicker != null) {
+			colorPicker.mouseReleased(button);
+		}
 		if(button == 0 || button == 12345) {
 			dragging = false;
 			adjustingScale = false;
@@ -771,11 +848,18 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	}
 
 	@Override
+	public void updateScreen() {
+		if(colorPicker != null) {
+			colorPicker.updateScreen();
+		}
+	}
+
+	@Override
 	protected void keyTyped(char character, int keyCode) {
 		if(keyCode == 1 || keyCode == mc.gameSettings.keyBindClose.getKeyCode()
 				|| keyCode > 0 && keyCode == mc.gameSettings.keyBindPvpHudEditor.getKeyCode()) {
 			closeEditor();
-		}else {
+		}else if(colorPicker == null || !colorPicker.keyTyped(character, keyCode)) {
 			super.keyTyped(character, keyCode);
 		}
 	}

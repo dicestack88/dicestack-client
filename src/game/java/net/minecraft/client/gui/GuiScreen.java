@@ -752,7 +752,7 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 				tessellator.draw();
 				GlStateManager.enableAlpha();
 			} else {
-				this.drawGradientRect(0, 0, this.width, this.height, -1072689136, -804253680);
+				this.drawBackground(i);
 			}
 			if (!(this instanceof GuiScreenServerInfo)) {
 				loc = (ingame && PauseMenuCustomizeState.icon_watermark_pause != null)
@@ -784,6 +784,33 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 	public void drawBackground(int tint) {
 		GlStateManager.disableLighting();
 		GlStateManager.disableFog();
+		if(EagRuntime.getResourceExists("/assets/dicestack/textures/gui/main-menu-background.png")) {
+			GlStateManager.enableBlend();
+			GlStateManager.disableAlpha();
+			GlStateManager.enableTexture2D();
+			GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
+			this.mc.getTextureManager().bindTexture(Gui.dicestackMenuBackground);
+			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+			float imageWidth = 3840.0F;
+			float imageHeight = 2160.0F;
+			float scale = Math.max(this.width / imageWidth, this.height / imageHeight);
+			float visibleWidth = this.width / (imageWidth * scale);
+			float visibleHeight = this.height / (imageHeight * scale);
+			float u0 = Math.max(0.0F, (1.0F - visibleWidth) * 0.5F);
+			float v0 = Math.max(0.0F, (1.0F - visibleHeight) * 0.5F);
+			float u1 = 1.0F - u0;
+			float v1 = 1.0F - v0;
+			Tessellator tessellator = Tessellator.getInstance();
+			WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+			worldrenderer.begin(7, DefaultVertexFormats.POSITION_TEX);
+			worldrenderer.pos(0.0D, (double) this.height, 0.0D).tex(u0, v1).endVertex();
+			worldrenderer.pos((double) this.width, (double) this.height, 0.0D).tex(u1, v1).endVertex();
+			worldrenderer.pos((double) this.width, 0.0D, 0.0D).tex(u1, v0).endVertex();
+			worldrenderer.pos(0.0D, 0.0D, 0.0D).tex(u0, v0).endVertex();
+			tessellator.draw();
+			GlStateManager.enableAlpha();
+			return;
+		}
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 		this.mc.getTextureManager().bindTexture(optionsBackground);

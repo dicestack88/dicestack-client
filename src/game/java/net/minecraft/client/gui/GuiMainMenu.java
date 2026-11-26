@@ -276,7 +276,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 			this.splashText = "OOoooOOOoooo! Spooky!";
 		}
 
-		int i = this.height / 4 + 48;
+		int i = Math.max(96, Math.min(this.height / 2 - 48, this.height / 4 + 48));
 
 		boolean isFork = !EaglercraftVersion.projectOriginAuthor.equalsIgnoreCase(EaglercraftVersion.projectForkVendor);
 
@@ -602,11 +602,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 	 */
 	public void drawScreen(int i, int j, float f) {
 		GlStateManager.disableAlpha();
-		if (enableBlur) {
-			this.renderSkybox(i, j, f);
-		} else {
-			this.drawPanorama(i, j, f);
-		}
+		this.drawBackground(0);
 		GlStateManager.enableAlpha();
 		short short1 = 274;
 		int k = this.width / 2 - short1 / 2;
@@ -614,22 +610,6 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 		if (enableBlur) {
 			this.drawGradientRect(0, 0, this.width, this.height, -2130706433, 16777215);
 			this.drawGradientRect(0, 0, this.width, this.height, 0, Integer.MIN_VALUE);
-		}
-		PvpClient pvpClient = PvpClient.getInstance();
-		if(pvpClient != null) {
-			HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
-			int menuTop = this.height / 4 + 48 - 10;
-			int menuWidth = 224;
-			HudRenderer.drawRoundedGradientRect(this.width / 2 - menuWidth / 2, menuTop,
-					menuWidth, 150, appearance.cornerRadius,
-					0xD5182633, 0xD90F1722, false);
-			HudRenderer.drawRoundedBorder(this.width / 2 - menuWidth / 2, menuTop,
-					menuWidth, 150, appearance.cornerRadius, 1,
-					HudRenderer.withAlpha(appearance.accentColor, 0.55f));
-			FontRenderer uiFont = PvpUiFontRenderer.get(this.mc);
-			String brand = uiFont.trimStringToWidth("DICESTACK", menuWidth - 20);
-			uiFont.drawStringWithShadow(brand, this.width / 2 - uiFont.getStringWidth(brand) / 2,
-					menuTop + 7, 0xFFF1F7F5);
 		}
 		this.mc.getTextureManager().bindTexture(minecraftTitleTextures);
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
