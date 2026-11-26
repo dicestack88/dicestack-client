@@ -23,7 +23,7 @@ import net.minecraft.entity.player.EnumPlayerModelParts;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiCustomizeSkin extends GuiScreen {
+public class GuiCustomizeSkin extends GuiScreen implements IDicestackBackgroundScreen {
 	private final GuiScreen parentScreen;
 	private String title;
 

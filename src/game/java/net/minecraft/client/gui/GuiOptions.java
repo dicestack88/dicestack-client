@@ -49,7 +49,7 @@ import net.minecraft.world.EnumDifficulty;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiOptions extends GuiScreen implements GuiYesNoCallback {
+public class GuiOptions extends GuiScreen implements GuiYesNoCallback, IDicestackBackgroundScreen {
 	private static final GameSettings.Options[] field_146440_f = new GameSettings.Options[] {
 			GameSettings.Options.FOV };
 	private final GuiScreen field_146441_g;

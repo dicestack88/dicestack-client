@@ -32,7 +32,7 @@ import net.minecraft.client.settings.GameSettings;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiLanguage extends GuiScreen {
+public class GuiLanguage extends GuiScreen implements IDicestackBackgroundScreen {
 	protected GuiScreen parentScreen;
 	private GuiLanguage.List list;
 	private final GameSettings game_settings_3;

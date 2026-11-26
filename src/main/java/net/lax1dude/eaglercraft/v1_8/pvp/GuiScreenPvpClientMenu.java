@@ -10,10 +10,11 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudManager;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.IDicestackBackgroundScreen;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 
-public final class GuiScreenPvpClientMenu extends GuiScreen {
+public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestackBackgroundScreen {
 
 	private static final String[] CATEGORIES = {
 			"All Mods", "HUD", "Visuals", "Camera", "QoL", "Crosshair",

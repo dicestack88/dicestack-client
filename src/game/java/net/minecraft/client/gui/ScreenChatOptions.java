@@ -24,7 +24,7 @@ import net.minecraft.client.settings.GameSettings;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class ScreenChatOptions extends GuiScreen {
+public class ScreenChatOptions extends GuiScreen implements IDicestackBackgroundScreen {
 	private static final GameSettings.Options[] field_146399_a = new GameSettings.Options[] {
 			GameSettings.Options.CHAT_VISIBILITY, GameSettings.Options.CHAT_COLOR, GameSettings.Options.CHAT_LINKS,
 			GameSettings.Options.CHAT_OPACITY, GameSettings.Options.CHAT_LINKS_PROMPT, GameSettings.Options.CHAT_SCALE,

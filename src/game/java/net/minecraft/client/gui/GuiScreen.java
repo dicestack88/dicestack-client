@@ -719,6 +719,10 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 		return false;
 	}
 
+	private boolean isDicestackMenuBackgroundAllowed() {
+		return this instanceof IDicestackBackgroundScreen;
+	}
+
 	public void drawWorldBackground(int i) {
 		if (this.mc.theWorld != null) {
 			boolean ingame = isPartOfPauseMenu();
@@ -728,7 +732,10 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 			float aspect = (ingame && PauseMenuCustomizeState.icon_background_pause != null)
 					? 1.0f / PauseMenuCustomizeState.icon_background_pause_aspect
 					: 1.0f / PauseMenuCustomizeState.icon_background_all_aspect;
-			if (loc != null) {
+			if (isDicestackMenuBackgroundAllowed()
+					&& EagRuntime.getResourceExists("/assets/dicestack/textures/gui/main-menu-background.png")) {
+				this.drawBackground(i);
+			} else if (loc != null) {
 				GlStateManager.disableLighting();
 				GlStateManager.disableFog();
 				GlStateManager.enableBlend();
@@ -752,7 +759,7 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 				tessellator.draw();
 				GlStateManager.enableAlpha();
 			} else {
-				this.drawBackground(i);
+				this.drawGradientRect(0, 0, this.width, this.height, -1072689136, -804253680);
 			}
 			if (!(this instanceof GuiScreenServerInfo)) {
 				loc = (ingame && PauseMenuCustomizeState.icon_watermark_pause != null)
@@ -784,7 +791,8 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 	public void drawBackground(int tint) {
 		GlStateManager.disableLighting();
 		GlStateManager.disableFog();
-		if(EagRuntime.getResourceExists("/assets/dicestack/textures/gui/main-menu-background.png")) {
+		if(isDicestackMenuBackgroundAllowed()
+				&& EagRuntime.getResourceExists("/assets/dicestack/textures/gui/main-menu-background.png")) {
 			GlStateManager.enableBlend();
 			GlStateManager.disableAlpha();
 			GlStateManager.enableTexture2D();

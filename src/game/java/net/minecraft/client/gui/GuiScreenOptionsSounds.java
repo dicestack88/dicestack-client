@@ -30,7 +30,7 @@ import net.minecraft.util.ResourceLocation;
  * POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-public class GuiScreenOptionsSounds extends GuiScreen {
+public class GuiScreenOptionsSounds extends GuiScreen implements IDicestackBackgroundScreen {
 	private final GuiScreen field_146505_f;
 	private final GameSettings game_settings_4;
 	protected String field_146507_a = "Options";
