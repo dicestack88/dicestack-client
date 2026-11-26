@@ -15,11 +15,11 @@ import net.minecraft.client.gui.ScaledResolution;
 public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private static final int TOOLBAR_BUTTONS = 7;
-	private static final int POPUP_BUTTONS = 24;
+	private static final int POPUP_BUTTONS = 26;
 	private static final int[] TOOLBAR_IDS = { 1, 2, 20, 3, 4, 5, 6 };
 	private static final String[] TOOLBAR_LABELS = { "Hide", "", "", "", "Reset", "All", "Done" };
 	private static final int[] POPUP_IDS = { 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25,
-			26, 27, 28, 29, 30, 31, 32, 33, 34 };
+			26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 };
 	private static final int[] COLORS = { 0xFFF1F7F5, 0xFF53D6A3, 0xFF55DDA0, 0xFFFFD166, 0xFF70A7FF,
 			0xFFFF7777, 0xFFFFFFFF, 0xFF111820, 0xFF172638, 0xFF0F1722, 0xFF8BA0B5 };
 
@@ -64,6 +64,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	@Override
 	public void initGui() {
+		fontRendererObj = PvpUiFontRenderer.get(mc);
 		resolution = new ScaledResolution(mc);
 		instructionText = Keyboard.getKeyName(mc.gameSettings.keyBindPvpHudEditor.getKeyCode())
 				+ " toggles editor; Esc closes";
@@ -188,11 +189,15 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		int right = toolbarX[3] + toolbarWidth[3];
 		int sliderWidth = right - x;
 		boolean hovered = contains(x, y, sliderWidth, toolbarHeight[1], mouseX, mouseY);
-		Gui.drawRect(x, y, right, y + toolbarHeight[1], hovered ? 0xFF304257 : 0xE51E2B3A);
-		Gui.drawRect(x, y, right, y + 1, 0xFF53D6A3);
+		int radius = getAppearance(selectedElement == null ? null
+				: pvpClient.getHudManager().getElementConfig(selectedElement)).cornerRadius;
+		HudRenderer.drawRoundedRect(x, y, sliderWidth, toolbarHeight[1], radius,
+				hovered ? 0xFF304257 : 0xE51E2B3A);
+		HudRenderer.drawRoundedBorder(x, y, sliderWidth, toolbarHeight[1], radius, 1, 0xFF53D6A3);
 		float scale = elementConfig == null ? 1.0f : elementConfig.scale;
 		String label = "Scale  " + Math.round(scale * 100.0f) / 100.0f + "x";
-		fontRendererObj.drawString(label, x + 3, y + 2, 0xFFF1F7F5);
+		fontRendererObj.drawString(fontRendererObj.trimStringToWidth(label, Math.max(0, sliderWidth - 6)),
+				x + 3, y + 2, 0xFFF1F7F5);
 		int trackLeft = x + 4;
 		int trackWidth = Math.max(1, sliderWidth - 8);
 		int trackY = y + toolbarHeight[1] - 4;
@@ -206,10 +211,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		drawPanel(popupPanelX, popupPanelY, popupPanelWidth, popupPanelHeight);
 		for(int i = 0; i < POPUP_BUTTONS; ++i) {
 			int id = POPUP_IDS[i];
-			if(id == 18 || id == 23 || id == 32 || id == 34) {
+			if(id == 18 || id == 23 || id == 32 || id == 34 || id == 36) {
 				continue;
 			}
-			if(id == 17 || id == 22 || id == 31 || id == 33) {
+			if(id == 17 || id == 22 || id == 31 || id == 33 || id == 35) {
 				int companion = id + 1;
 				int companionIndex = popupIndex(companion);
 				if(companionIndex >= 0) {
@@ -230,9 +235,12 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private void drawPopupSlider(int id, int x, int y, int controlWidth, int controlHeight, int mouseX, int mouseY) {
 		boolean hovered = contains(x, y, controlWidth, controlHeight, mouseX, mouseY);
-		Gui.drawRect(x, y, x + controlWidth, y + controlHeight, hovered ? 0xFF304257 : 0xCC202D3A);
-		Gui.drawRect(x, y, x + controlWidth, y + 1, hovered ? 0xFF53D6A3 : 0xFF526477);
-		String label = popupSliderLabel(id);
+		int radius = getAppearance(pvpClient.getHudManager().getElementConfig(selectedElement)).cornerRadius;
+		HudRenderer.drawRoundedRect(x, y, controlWidth, controlHeight, radius,
+				hovered ? 0xFF304257 : 0xCC202D3A);
+		HudRenderer.drawRoundedBorder(x, y, controlWidth, controlHeight, radius, 1,
+				hovered ? 0xFF53D6A3 : 0xFF526477);
+		String label = fontRendererObj.trimStringToWidth(popupSliderLabel(id), Math.max(0, controlWidth - 8));
 		fontRendererObj.drawString(label, x + 3, y + Math.max(0, (controlHeight - 8) / 2 - 2), 0xFFF1F7F5);
 		int trackLeft = x + 4;
 		int trackWidth = Math.max(1, controlWidth - 8);
@@ -261,6 +269,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		case 22: return "BORDER WIDTH  " + Math.round(popupSliderValue(id));
 		case 31: return "X OFFSET  " + pvpClient.getHudManager().getElementConfig(selectedElement).offsetX;
 		case 33: return "Y OFFSET  " + pvpClient.getHudManager().getElementConfig(selectedElement).offsetY;
+		case 35: return "CORNER RADIUS  " + Math.round(popupSliderValue(id));
 		default: return "";
 		}
 	}
@@ -273,20 +282,21 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		case 22: return style.borderThickness;
 		case 31: return element.offsetX;
 		case 33: return element.offsetY;
+		case 35: return style.cornerRadius;
 		default: return 0.0f;
 		}
 	}
 
 	private float popupSliderMinimum(int id) {
-		return id == 17 ? 0.0f : id == 22 ? 0.0f : id == 31 ? -width : -height;
+		return id == 17 || id == 22 || id == 35 ? 0.0f : id == 31 ? -width : -height;
 	}
 
 	private float popupSliderMaximum(int id) {
-		return id == 17 ? 1.0f : id == 22 ? 4.0f : id == 31 ? width : height;
+		return id == 17 ? 1.0f : id == 22 ? 4.0f : id == 35 ? 12.0f : id == 31 ? width : height;
 	}
 
 	private boolean startPopupSlider(int mouseX, int mouseY) {
-		for(int id : new int[] { 17, 22, 31, 33 }) {
+		for(int id : new int[] { 17, 22, 31, 33, 35 }) {
 			int index = popupIndex(id);
 			int companionIndex = popupIndex(id + 1);
 			if(index < 0 || companionIndex < 0) {
@@ -322,6 +332,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		switch(activePopupSlider) {
 		case 17: style.backgroundOpacity = value; break;
 		case 22: style.borderThickness = Math.round(value); break;
+		case 35: style.cornerRadius = Math.round(value); break;
 		case 31: element.offsetX = Math.round(value); break;
 		case 33: element.offsetY = Math.round(value); break;
 		}
@@ -332,26 +343,24 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 	private void drawPanel(int x, int y, int panelWidth, int panelHeight) {
 		HudAppearanceConfig style = selectedElement == null ? pvpClient.getConfigStore().getConfig().appearance
 				: getAppearance(pvpClient.getHudManager().getElementConfig(selectedElement));
-		int start = HudRenderer.withAlpha(style.gradientStart, style.backgroundOpacity);
-		int end = style.gradientEnabled ? HudRenderer.withAlpha(style.gradientEnd, style.backgroundOpacity) : start;
-		if(style.preset == HudAppearanceConfig.Preset.MODERN_GLASS && style.gradientEnabled) {
-			drawGradientRect(x, y, x + panelWidth, y + panelHeight, start, end);
-		}else {
-			Gui.drawRect(x, y, x + panelWidth, y + panelHeight, start);
-		}
-		int border = HudRenderer.withAlpha(style.borderColor, style.borderOpacity);
-		Gui.drawRect(x, y, x + panelWidth, y + Math.max(1, style.borderThickness), border);
-		Gui.drawRect(x, y + panelHeight - 1, x + panelWidth, y + panelHeight, border);
-		Gui.drawRect(x, y, x + 1, y + panelHeight, border);
-		Gui.drawRect(x + panelWidth - 1, y, x + panelWidth, y + panelHeight, border);
+		HudRenderer.drawPanel(style, x, y, panelWidth, panelHeight);
 	}
 
 	private void drawControl(int x, int y, int controlWidth, int controlHeight, String label,
 			boolean active, boolean hovered) {
 		int background = active ? 0xFF294538 : hovered ? 0xE12B3B4B : 0xCC202D3A;
-		Gui.drawRect(x, y, x + controlWidth, y + controlHeight, background);
-		Gui.drawRect(x, y, x + controlWidth, y + 1,
+		HudAppearanceConfig style = selectedElement == null ? pvpClient.getConfigStore().getConfig().appearance
+				: getAppearance(pvpClient.getHudManager().getElementConfig(selectedElement));
+		int radius = style.cornerRadius;
+		HudRenderer.drawRoundedRect(x, y, controlWidth, controlHeight, radius, background);
+		HudRenderer.drawRoundedBorder(x, y, controlWidth, controlHeight, radius, 1,
 				active || hovered ? 0xFF53D6A3 : 0xFF526477);
+		int availableWidth = Math.max(0, controlWidth - 6);
+		if(fontRendererObj.getStringWidth(label) > availableWidth) {
+			String suffix = availableWidth >= fontRendererObj.getStringWidth("...") ? "..." : "";
+			int textLimit = Math.max(0, availableWidth - fontRendererObj.getStringWidth(suffix));
+			label = fontRendererObj.trimStringToWidth(label, textLimit) + suffix;
+		}
 		int textWidth = fontRendererObj.getStringWidth(label);
 		int textX = x + Math.max(1, Math.min(controlWidth - textWidth - 1, (controlWidth - textWidth) / 2));
 		int textY = y + Math.max(0, (controlHeight - 8) / 2);
@@ -370,6 +379,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 		HudElementConfig config = manager.getElementConfig(selectedElement);
 		String label = name + "  |  " + config.anchor.name().replace('_', ' ')
 				+ "  |  drag to position";
+		label = fontRendererObj.trimStringToWidth(label, Math.max(0, width - 8));
 		fontRendererObj.drawStringWithShadow(label, Math.max(4, width / 2 - fontRendererObj.getStringWidth(label) / 2),
 				Math.max(3, toolbarPanelY - 11), 0xFFF1F7F5);
 	}
@@ -453,7 +463,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen {
 
 	private HudAppearanceConfig getAppearance(HudElementConfig element) {
 		PvpConfig config = pvpClient.getConfigStore().getConfig();
-		return element.appearanceOverride ? element.appearance : config.appearance;
+		return element == null || !element.appearanceOverride ? config.appearance : element.appearance;
 	}
 
 	@Override

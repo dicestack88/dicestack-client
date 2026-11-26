@@ -5,6 +5,7 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.PvpContext;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.client.Minecraft;
 
@@ -73,7 +74,7 @@ public final class CoordinatesHud implements HudElement {
 			cachedZ = z;
 			cachedFormat = context.config.coordinateFormat;
 			cachedText = PvpConfig.formatCoordinates(cachedFormat, x, y, z);
-			cachedWidth = minecraft.fontRendererObj.getStringWidth(cachedText) + 4;
+			cachedWidth = PvpUiFontRenderer.get(minecraft).getStringWidth(cachedText) + 4;
 		}
 	}
 

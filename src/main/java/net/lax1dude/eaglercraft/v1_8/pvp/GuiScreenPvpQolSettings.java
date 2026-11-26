@@ -36,6 +36,11 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	private int panelHeight;
 	private int rowHeight;
 	private int page;
+	private int settingsPage;
+	private int footerY;
+	private String titleText;
+	private String searchHint;
+	private String pageLabel;
 
 	public GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent) {
 		this(pvpClient, parent, 0, "");
@@ -50,18 +55,27 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 
 	@Override
 	public void initGui() {
-		panelWidth = Math.min(560, Math.max(1, width - 8));
-		panelHeight = Math.min(340, Math.max(112, height - 8));
+		fontRendererObj = PvpUiFontRenderer.get(mc);
+		panelWidth = Math.max(1, Math.min(560, width - 8));
+		panelHeight = Math.max(1, Math.min(340, height - 8));
 		panelX = (width - panelWidth) / 2;
-		panelY = Math.max(2, (height - panelHeight) / 2);
+		panelY = Math.max(0, (height - panelHeight) / 2);
 		buttonList.clear();
-		searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31, panelWidth - 16, 18);
+		searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31, Math.max(1, panelWidth - 16), 18);
 		searchField.setMaxStringLength(32);
 		searchField.setText(searchText);
+		settingsPage = Math.min(settingsPage, getSettingsPageCount() - 1);
+		titleText = fontRendererObj.trimStringToWidth("DICESTACK  /  " + pageTitle(),
+				Math.max(0, panelWidth - 16));
+		searchHint = fontRendererObj.trimStringToWidth("Search all settings...",
+				Math.max(0, searchField.width - 8));
 		List<Integer> displayedIds = getDisplayedButtonIds();
 		int rows = (displayedIds.size() + 1) / 2;
-		rowHeight = Math.max(12, Math.min(22,
-				(panelHeight - 98 - Math.max(0, rows - 1) * 2) / Math.max(1, rows)));
+		int footerHeight = Math.min(20, Math.max(1, panelHeight - 1));
+		footerY = panelY + panelHeight - footerHeight - 4;
+		int availableListHeight = Math.max(1, footerY - (panelY + 55) - 4);
+		rowHeight = Math.max(1, Math.min(22,
+				(availableListHeight - Math.max(0, rows - 1) * 2) / Math.max(1, rows)));
 		int gap = 4;
 		int buttonWidth = Math.max(1, (panelWidth - 24 - gap) / 2);
 		int buttonX = panelX + 8;
@@ -75,10 +89,14 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 			PvpSliderButton slider = createSlider(id, x, y, buttonWidth, rowHeight);
 			buttonList.add(slider == null ? new PvpGuiButton(id, x, y, buttonWidth, rowHeight, getLabel(id)) : slider);
 		}
-		int footerY = panelY + panelHeight - 25;
-		buttonList.add(new PvpGuiButton(12, panelX + 8, footerY, 42, 20, "<"));
-		buttonList.add(new PvpGuiButton(13, panelX + 54, footerY, 42, 20, ">"));
-		buttonList.add(new PvpGuiButton(11, panelX + panelWidth - 82, footerY, 74, 20, "Done"));
+		int footerGap = Math.min(4, Math.max(0, (panelWidth - 3) / 6));
+		int footerWidth = Math.max(1, (panelWidth - 16 - footerGap * 2) / 3);
+		buttonList.add(new PvpGuiButton(12, panelX + 8, footerY, footerWidth, footerHeight, "<"));
+		buttonList.add(new PvpGuiButton(13, panelX + 8 + footerWidth + footerGap, footerY, footerWidth,
+				footerHeight, ">"));
+		buttonList.add(new PvpGuiButton(11, panelX + 8 + (footerWidth + footerGap) * 2, footerY,
+				footerWidth, footerHeight, "Done"));
+		pageLabel = (settingsPage + 1) + " / " + getSettingsPageCount();
 	}
 
 	@Override
@@ -90,29 +108,15 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
 		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
-		int start = HudRenderer.withAlpha(appearance.gradientStart,
-				Math.max(0.88f, appearance.backgroundOpacity));
-		int end = HudRenderer.withAlpha(appearance.gradientEnd,
-				Math.max(0.88f, appearance.backgroundOpacity));
-		if(appearance.preset == HudAppearanceConfig.Preset.MODERN_GLASS && appearance.gradientEnabled) {
-			drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start, end);
-		}else {
-			drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start);
-		}
-		int border = HudRenderer.withAlpha(appearance.borderColor, Math.max(0.72f, appearance.borderOpacity));
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + Math.max(1, appearance.borderThickness), border);
-		drawRect(panelX, panelY + panelHeight - 1, panelX + panelWidth, panelY + panelHeight, border);
-		drawRect(panelX, panelY, panelX + 1, panelY + panelHeight, border);
-		drawRect(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + panelHeight, border);
-		drawCenteredString(fontRendererObj, "DICESTACK  /  " + pageTitle(), width / 2, panelY + 9, 0xFFF1F7F5);
+		HudRenderer.drawPanel(appearance, panelX, panelY, panelWidth, panelHeight);
+		drawCenteredString(fontRendererObj, titleText, width / 2, panelY + 9, 0xFFF1F7F5);
 		if(searchField.getText().isEmpty()) {
-			fontRendererObj.drawStringWithShadow("Search all settings...", searchField.xPosition + 4,
+			fontRendererObj.drawStringWithShadow(searchHint, searchField.xPosition + 4,
 					searchField.yPosition + 5, 0xFF758396);
 		}
 		searchField.drawTextBox();
-		int pageCount = searchText.isEmpty() ? PAGES.length : Math.max(1, (getFilteredSettingIds().size() + 11) / 12);
-		drawCenteredString(fontRendererObj, (page + 1) + " / " + pageCount, width / 2,
-				panelY + panelHeight - 35, 0xFF9BA8B8);
+		drawCenteredString(fontRendererObj, pageLabel, width / 2,
+				footerY - 10, 0xFF9BA8B8);
 		super.drawScreen(mouseX, mouseY, partialTicks);
 	}
 
@@ -127,19 +131,24 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 			mc.displayGuiScreen(parent);
 			return;
 		case 12:
-			if(searchText.isEmpty()) {
+			if(settingsPage > 0) {
+				--settingsPage;
+			}else if(searchText.isEmpty()) {
 				page = (page + PAGES.length - 1) % PAGES.length;
+				settingsPage = getSettingsPageCount() - 1;
 			}else {
-				int count = Math.max(1, (getFilteredSettingIds().size() + 11) / 12);
-				page = (page + count - 1) % count;
+				settingsPage = getSettingsPageCount() - 1;
 			}
 			initGui();
 			return;
 		case 13:
-			if(searchText.isEmpty()) {
+			if(settingsPage + 1 < getSettingsPageCount()) {
+				++settingsPage;
+			}else if(searchText.isEmpty()) {
 				page = (page + 1) % PAGES.length;
+				settingsPage = 0;
 			}else {
-				page = (page + 1) % Math.max(1, (getFilteredSettingIds().size() + 11) / 12);
+				settingsPage = 0;
 			}
 			initGui();
 			return;
@@ -266,7 +275,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		}
 		pvpClient.getConfigStore().markDirty();
 		if(!searchText.isEmpty()) {
-			page = 0;
+			settingsPage = 0;
 		}
 		initGui();
 	}
@@ -281,7 +290,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 			String nextSearch = searchField.getText();
 			if(!nextSearch.equals(searchText)) {
 				searchText = nextSearch;
-				page = 0;
+				settingsPage = 0;
 				initGui();
 			}
 			return;
@@ -296,18 +305,41 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	}
 
 	private List<Integer> getDisplayedButtonIds() {
-		List<Integer> displayed = new ArrayList<>();
+		List<Integer> settings = new ArrayList<>();
 		if(searchText.isEmpty()) {
 			for(int id : PAGES[page]) {
 				if(!isSliderCompanion(id)) {
-					displayed.add(id);
+					settings.add(id);
 				}
 			}
-			return displayed;
+		}else {
+			settings = getFilteredSettingIds();
 		}
-		List<Integer> matches = getFilteredSettingIds();
-		int start = Math.min(page * 12, matches.size());
-		return new ArrayList<>(matches.subList(start, Math.min(start + 12, matches.size())));
+		int pageSize = getSettingsPageSize();
+		int start = Math.min(settingsPage * pageSize, settings.size());
+		return new ArrayList<>(settings.subList(start, Math.min(start + pageSize, settings.size())));
+	}
+
+	private int getSettingsPageSize() {
+		int footerHeight = Math.min(20, Math.max(1, panelHeight - 1));
+		int footerY = panelY + panelHeight - footerHeight - 4;
+		int availableListHeight = Math.max(1, footerY - (panelY + 55) - 4);
+		int rows = Math.max(1, (availableListHeight + 2) / 24);
+		return rows * 2;
+	}
+
+	private int getSettingsPageCount() {
+		int settingsCount = 0;
+		if(searchText.isEmpty()) {
+			for(int id : PAGES[page]) {
+				if(!isSliderCompanion(id)) {
+					++settingsCount;
+				}
+			}
+		}else {
+			settingsCount = getFilteredSettingIds().size();
+		}
+		return Math.max(1, (settingsCount + getSettingsPageSize() - 1) / getSettingsPageSize());
 	}
 
 	private List<Integer> getFilteredSettingIds() {

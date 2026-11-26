@@ -12,7 +12,6 @@ import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
-import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 
 public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
@@ -35,6 +34,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private final PvpClient pvpClient;
 	private final GuiScreen parent;
 	private final List<HudModuleInfo> filteredModules = new ArrayList<>();
+	private final List<String> filteredModuleLabels = new ArrayList<>();
 	private HudModuleInfo.Category category = HudModuleInfo.Category.CORE;
 	private HudModuleInfo selectedModule;
 	private GuiTextField searchField;
@@ -50,6 +50,13 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private int visibleRows;
 	private int page;
 	private String previousSearch = "";
+	private String titleText;
+	private String descriptionText;
+	private String searchHint;
+	private String pageLabel;
+	private HudModuleInfo selectedNameSource;
+	private int selectedNameWidth = -1;
+	private String selectedModuleLabel = "";
 	private boolean favoritesOnly;
 
 	public GuiScreenPvpHudModuleManager(PvpClient pvpClient) {
@@ -68,48 +75,75 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
 	@Override
 	public void initGui() {
+		fontRendererObj = PvpUiFontRenderer.get(mc);
 		buttonList.clear();
-		panelWidth = Math.min(620, width - 12);
-		panelHeight = Math.min(430, height - 12);
+		panelWidth = Math.max(1, Math.min(620, width - 12));
+		panelHeight = Math.max(1, Math.min(430, height - 12));
 		panelX = (width - panelWidth) / 2;
 		panelY = (height - panelHeight) / 2;
 		listX = panelX + 12;
 		listY = panelY + 100;
-		listWidth = panelWidth - 250;
-		visibleRows = Math.max(1, Math.min(PAGE_SIZE, (panelHeight - 188) / 28));
+		listWidth = Math.max(1, (panelWidth - 36) / 2);
+		visibleRows = Math.max(1, Math.min(PAGE_SIZE, (panelHeight - 166) / 28));
 
-		searchField = new GuiTextField(100, fontRendererObj, panelX + 12, panelY + 69, listWidth - 80, 18);
+		searchField = new GuiTextField(100, fontRendererObj, listX, panelY + 69, Math.max(1, listWidth - 80), 18);
 		searchField.setMaxStringLength(32);
 		searchField.setText(previousSearch);
+		int headerWidth = Math.max(0, panelWidth - 24);
+		titleText = fontRendererObj.trimStringToWidth("DICESTACK  /  HUD MODULES", headerWidth);
+		descriptionText = fontRendererObj.trimStringToWidth("Search modules and configure your active HUD",
+				headerWidth);
+		searchHint = fontRendererObj.trimStringToWidth("Search...", Math.max(0, searchField.width - 8));
 		int tabX = panelX + 12;
-		int tabWidth = (panelWidth - 24) / HudModuleInfo.Category.values().length;
+		int tabWidth = Math.max(1, (panelWidth - 24) / HudModuleInfo.Category.values().length);
 		HudModuleInfo.Category[] categories = HudModuleInfo.Category.values();
 		for(int i = 0; i < categories.length; ++i) {
-			buttonList.add(new PvpGuiButton(BUTTON_CATEGORY_BASE + i, tabX + i * tabWidth, panelY + 37, tabWidth - 3, 20,
+			buttonList.add(new PvpGuiButton(BUTTON_CATEGORY_BASE + i, tabX + i * tabWidth, panelY + 37,
+					Math.max(1, tabWidth - 3), 20,
 					categories[i].getDisplayName()));
 		}
 		updateCategoryButtons();
-		buttonList.add(new PvpGuiButton(BUTTON_FAVORITES_ONLY, panelX + listWidth - 60, panelY + 68, 72, 20,
-				favoritesOnly ? "Favourites" : "All"));
+		int favoriteWidth = Math.min(72, Math.max(1, listWidth));
+		buttonList.add(new PvpGuiButton(BUTTON_FAVORITES_ONLY, listX + listWidth - favoriteWidth, panelY + 68,
+				favoriteWidth, 20, favoritesOnly ? "Favourites" : "All"));
 
-		int sideX = panelX + listWidth + 26;
-		buttonList.add(new PvpGuiButton(BUTTON_SCALE_DOWN, sideX, listY + 116, 40, 20, "-"));
-		buttonList.add(new PvpGuiButton(BUTTON_SCALE_UP, sideX + 46, listY + 116, 40, 20, "+"));
-		buttonList.add(new PvpGuiButton(BUTTON_APPEARANCE_OVERRIDE, sideX, listY + 176, 86, 20, "Appearance"));
-		buttonList.add(new PvpGuiButton(BUTTON_THEME_PRESET, sideX, listY + 200, 86, 20, "Preset"));
-		buttonList.add(new PvpGuiButton(BUTTON_FAVORITE, sideX, listY + 224, 86, 20, "Favourite"));
-		buttonList.add(previousButton = new PvpGuiButton(BUTTON_PREVIOUS, listX, panelY + panelHeight - 88, 52, 20, "<"));
-		buttonList.add(nextButton = new PvpGuiButton(BUTTON_NEXT, listX + 58, panelY + panelHeight - 88, 52, 20, ">"));
 		int footerY = panelY + panelHeight - 30;
-		int footerWidth = (panelWidth - 48) / 5;
-		buttonList.add(new PvpGuiButton(BUTTON_EDIT_LAYOUT, panelX + 12, footerY, footerWidth, 20, "Edit HUD Layout"));
-		buttonList.add(new PvpGuiButton(BUTTON_DISABLE_ALL, panelX + 16 + footerWidth, footerY, footerWidth, 20,
-				"Disable All"));
-		buttonList.add(new PvpGuiButton(BUTTON_RESET_DEFAULTS, panelX + 20 + footerWidth * 2, footerY, footerWidth, 20,
-				"Reset Defaults"));
-		buttonList.add(new PvpGuiButton(BUTTON_PROFILES, panelX + 24 + footerWidth * 3, footerY, footerWidth, 20,
-				"Profiles"));
-		buttonList.add(new PvpGuiButton(BUTTON_DONE, panelX + 28 + footerWidth * 4, footerY, footerWidth, 20, "Done"));
+		int footerGap = 3;
+		int footerWidth = Math.max(1, (panelWidth - 24 - footerGap * 4) / 5);
+		int footerX = panelX + 12;
+		int[] footerIds = { BUTTON_EDIT_LAYOUT, BUTTON_DISABLE_ALL, BUTTON_RESET_DEFAULTS, BUTTON_PROFILES, BUTTON_DONE };
+		String[] footerLabels = { "Edit HUD Layout", "Disable All", "Reset Defaults", "Profiles", "Done" };
+		for(int i = 0; i < footerIds.length; ++i) {
+			buttonList.add(new PvpGuiButton(footerIds[i], footerX, footerY, footerWidth, 20, footerLabels[i]));
+			footerX += footerWidth + footerGap;
+		}
+		int navigationWidth = Math.min(52, Math.max(1, listWidth / 3));
+		int navigationY = footerY - 25;
+		buttonList.add(previousButton = new PvpGuiButton(BUTTON_PREVIOUS, listX, navigationY, navigationWidth, 20, "<"));
+		buttonList.add(nextButton = new PvpGuiButton(BUTTON_NEXT, listX + navigationWidth + 4, navigationY,
+				navigationWidth, 20, ">"));
+		int sideX = listX + listWidth + 12;
+		int sideWidth = Math.max(1, panelX + panelWidth - 12 - sideX);
+		int smallButtonWidth = Math.max(1, (sideWidth - 4) / 2);
+		int availableControlHeight = Math.max(0, footerY - 4 - (listY + 42));
+		int sideControlGap = Math.min(4, Math.max(0, (availableControlHeight - 48) / 2));
+		int sideControlHeight = Math.min(16,
+				Math.max(1, (availableControlHeight - sideControlGap * 2) / 3));
+		if(sideControlHeight >= 8) {
+			int sideControlY = footerY - 4 - sideControlHeight * 3 - sideControlGap * 2;
+			buttonList.add(new PvpGuiButton(BUTTON_SCALE_DOWN, sideX, sideControlY, smallButtonWidth,
+					sideControlHeight, "-"));
+			buttonList.add(new PvpGuiButton(BUTTON_SCALE_UP, sideX + smallButtonWidth + 4, sideControlY,
+					smallButtonWidth, sideControlHeight, "+"));
+			int appearanceY = sideControlY + sideControlHeight + sideControlGap;
+			buttonList.add(new PvpGuiButton(BUTTON_APPEARANCE_OVERRIDE, sideX, appearanceY, sideWidth,
+					sideControlHeight, "Appearance"));
+			int presetY = appearanceY + sideControlHeight + sideControlGap;
+			buttonList.add(new PvpGuiButton(BUTTON_THEME_PRESET, sideX, presetY, smallButtonWidth,
+					sideControlHeight, "Preset"));
+			buttonList.add(new PvpGuiButton(BUTTON_FAVORITE, sideX + smallButtonWidth + 4, presetY,
+					smallButtonWidth, sideControlHeight, "Favourite"));
+		}
 		refreshModules();
 	}
 
@@ -122,20 +156,9 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
 		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
-		int start = HudRenderer.withAlpha(appearance.gradientStart,
-				Math.max(0.88f, appearance.backgroundOpacity));
-		int end = HudRenderer.withAlpha(appearance.gradientEnd,
-				Math.max(0.88f, appearance.backgroundOpacity));
-		if(appearance.preset == HudAppearanceConfig.Preset.MODERN_GLASS && appearance.gradientEnabled) {
-			drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start, end);
-		}else {
-			drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start);
-		}
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + Math.max(2, appearance.borderThickness),
-				HudRenderer.withAlpha(appearance.accentColor, Math.max(0.72f, appearance.borderOpacity)));
-		fontRendererObj.drawStringWithShadow("DICESTACK  /  HUD MODULES", panelX + 12, panelY + 12, 0xFFFFFFFF);
-		fontRendererObj.drawStringWithShadow("Search modules and configure your active HUD", panelX + 12, panelY + 25,
-				0xFF9BA8B8);
+		HudRenderer.drawPanel(appearance, panelX, panelY, panelWidth, panelHeight);
+		fontRendererObj.drawStringWithShadow(titleText, panelX + 12, panelY + 12, 0xFFFFFFFF);
+		fontRendererObj.drawStringWithShadow(descriptionText, panelX + 12, panelY + 25, 0xFF9BA8B8);
 
 		for(int i = 0; i < filteredModules.size(); ++i) {
 			HudModuleInfo module = filteredModules.get(i);
@@ -145,44 +168,58 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 			int rowY = listY + (i - page * visibleRows) * 28;
 			boolean selected = module == selectedModule;
 			HudElementConfig config = pvpClient.getHudManager().getElementConfig(module.element);
-			drawRect(listX, rowY, listX + listWidth, rowY + 25, selected ? 0xFF26384B : 0xFF1A2431);
-			drawRect(listX, rowY, listX + 2, rowY + 25, selected ? 0xFF31C48D : 0xFF344252);
-			fontRendererObj.drawStringWithShadow(module.name, listX + 9, rowY + 4, 0xFFE9EFF7);
+			HudRenderer.drawRoundedRect(listX, rowY, listWidth, 25, appearance.cornerRadius,
+					selected ? 0xFF26384B : 0xFF1A2431);
+			HudRenderer.drawRoundedBorder(listX, rowY, listWidth, 25, appearance.cornerRadius, 1,
+					selected ? appearance.accentColor : 0xFF344252);
+			fontRendererObj.drawStringWithShadow(filteredModuleLabels.get(i), listX + 9, rowY + 4, 0xFFE9EFF7);
 			fontRendererObj.drawStringWithShadow(config.enabled ? "ON" : "OFF",
-					listX + listWidth - 42, rowY + 4, config.enabled ? 0xFF55DD88 : 0xFF9BA8B8);
+					listX + listWidth - 25, rowY + 4, config.enabled ? 0xFF55DD88 : 0xFF9BA8B8);
 			if(config.favorite) {
-				fontRendererObj.drawStringWithShadow("*", listX + listWidth - 56, rowY + 4, 0xFFFFD166);
+				fontRendererObj.drawStringWithShadow("*", listX + listWidth - 38, rowY + 4, 0xFFFFD166);
 			}
 		}
 
-		int sideX = panelX + listWidth + 26;
-		drawRect(sideX - 10, listY, panelX + panelWidth - 12, panelY + panelHeight - 68, 0xFF1A2431);
-		fontRendererObj.drawStringWithShadow("MODULE SETTINGS", sideX, listY + 10, 0xFF31C48D);
+		int sideX = listX + listWidth + 12;
+		int sideWidth = Math.max(1, panelX + panelWidth - 12 - sideX);
+		int footerY = panelY + panelHeight - 30;
+		HudRenderer.drawRoundedRect(sideX - 4, listY, sideWidth + 4,
+				Math.max(1, footerY - 4 - listY), appearance.cornerRadius, 0xFF1A2431);
+		fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth("MODULE SETTINGS", sideWidth), sideX,
+				listY + 10, 0xFF31C48D);
 		if(selectedModule == null) {
-			fontRendererObj.drawStringWithShadow("Select a module", sideX, listY + 32, 0xFFE9EFF7);
-			fontRendererObj.drawStringWithShadow("to view its settings.", sideX, listY + 44, 0xFF9BA8B8);
+			fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth("Select a module", sideWidth),
+					sideX, listY + 32, 0xFFE9EFF7);
 		}else {
 			HudElementConfig config = pvpClient.getHudManager().getElementConfig(selectedModule.element);
-			fontRendererObj.drawStringWithShadow(selectedModule.name, sideX, listY + 32, 0xFFE9EFF7);
-			fontRendererObj.drawStringWithShadow("Category: " + selectedModule.category.getDisplayName(), sideX,
-					listY + 48, 0xFF9BA8B8);
-			fontRendererObj.drawStringWithShadow("State: " + (config.enabled ? "Enabled" : "Disabled"), sideX,
-					listY + 64, config.enabled ? 0xFF55DD88 : 0xFF9BA8B8);
-			fontRendererObj.drawStringWithShadow("Favourite: " + (config.favorite ? "Yes" : "No"), sideX,
-					listY + 80, config.favorite ? 0xFFFFD166 : 0xFF9BA8B8);
-			fontRendererObj.drawStringWithShadow("Scale: " + config.scale + "x", sideX, listY + 108, 0xFFE9EFF7);
-			fontRendererObj.drawStringWithShadow("Position and snapping are", sideX, listY + 148, 0xFF9BA8B8);
-			fontRendererObj.drawStringWithShadow("available in HUD Layout.", sideX, listY + 160, 0xFF9BA8B8);
+			if(selectedNameSource != selectedModule || selectedNameWidth != sideWidth) {
+				selectedNameSource = selectedModule;
+				selectedNameWidth = sideWidth;
+				selectedModuleLabel = fontRendererObj.trimStringToWidth(selectedModule.name, sideWidth);
+			}
+			fontRendererObj.drawStringWithShadow(selectedModuleLabel, sideX, listY + 32, 0xFFE9EFF7);
+			if(panelHeight >= 330) {
+				fontRendererObj.drawStringWithShadow("Category: "
+						+ fontRendererObj.trimStringToWidth(selectedModule.category.getDisplayName(),
+								Math.max(0, sideWidth - fontRendererObj.getStringWidth("Category: "))),
+						sideX, listY + 48, 0xFF9BA8B8);
+				fontRendererObj.drawStringWithShadow("State: " + (config.enabled ? "Enabled" : "Disabled"), sideX,
+						listY + 64, config.enabled ? 0xFF55DD88 : 0xFF9BA8B8);
+				fontRendererObj.drawStringWithShadow("Favourite: " + (config.favorite ? "Yes" : "No"), sideX,
+						listY + 80, config.favorite ? 0xFFFFD166 : 0xFF9BA8B8);
+				fontRendererObj.drawStringWithShadow("Scale: " + config.scale + "x", sideX, listY + 108, 0xFFE9EFF7);
+				fontRendererObj.drawStringWithShadow("Position and snapping are", sideX, listY + 148, 0xFF9BA8B8);
+				fontRendererObj.drawStringWithShadow("available in HUD Layout.", sideX, listY + 160, 0xFF9BA8B8);
+			}
 		}
 
 		if(searchField.getText().isEmpty()) {
-			fontRendererObj.drawStringWithShadow("Search...", searchField.xPosition + 4, searchField.yPosition + 5,
+			fontRendererObj.drawStringWithShadow(searchHint, searchField.xPosition + 4, searchField.yPosition + 5,
 					0xFF758396);
 		}
 		searchField.drawTextBox();
-		int pageCount = Math.max(1, (filteredModules.size() + visibleRows - 1) / visibleRows);
-		fontRendererObj.drawStringWithShadow((filteredModules.isEmpty() ? "0" : Integer.toString(page + 1))
-				+ " / " + pageCount, listX + 120, panelY + panelHeight - 82, 0xFF9BA8B8);
+		int pageLabelY = Math.min(panelY + panelHeight - 30 - 25 - 12, listY + visibleRows * 28);
+		drawCenteredString(fontRendererObj, pageLabel, listX + listWidth / 2, pageLabelY, 0xFF9BA8B8);
 		super.drawScreen(mouseX, mouseY, partialTicks);
 	}
 
@@ -269,7 +306,8 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
 	@Override
 	protected void mouseClicked(int mouseX, int mouseY, int button) {
-		if(button == 0 && mouseX >= listX && mouseX < listX + listWidth && mouseY >= listY) {
+		if(button == 0 && mouseX >= listX && mouseX < listX + listWidth
+				&& mouseY >= listY && mouseY < listY + visibleRows * 28) {
 			int row = (mouseY - listY) / 28;
 			int index = page * visibleRows + row;
 			if((mouseY - listY) % 28 < 25 && index >= 0 && index < filteredModules.size()) {
@@ -318,6 +356,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 
 	private void refreshModules() {
 		filteredModules.clear();
+		filteredModuleLabels.clear();
 		String query = previousSearch.toLowerCase(Locale.ROOT);
 		HudManager manager = pvpClient.getHudManager();
 		for(int i = 0; i < manager.getElementCount(); ++i) {
@@ -326,6 +365,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 			if((!query.isEmpty() || module.category == category) && module.name.toLowerCase(Locale.ROOT).contains(query)
 					&& (!favoritesOnly || favorite)) {
 				filteredModules.add(module);
+				filteredModuleLabels.add(fontRendererObj.trimStringToWidth(module.name, Math.max(0, listWidth - 54)));
 			}
 		}
 		if(selectedModule != null && !filteredModules.contains(selectedModule)) {
@@ -343,6 +383,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 			previousButton.enabled = page > 0;
 			nextButton.enabled = page + 1 < pageCount;
 		}
+		pageLabel = (filteredModules.isEmpty() ? "0" : Integer.toString(page + 1)) + " / " + pageCount;
 		for(int i = 0; i < buttonList.size(); ++i) {
 			GuiButton button = (GuiButton) buttonList.get(i);
 			if(button.id == BUTTON_FAVORITES_ONLY) {

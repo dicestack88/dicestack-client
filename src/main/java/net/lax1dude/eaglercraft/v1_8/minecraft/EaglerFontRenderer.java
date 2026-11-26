@@ -16,6 +16,8 @@
 
 package net.lax1dude.eaglercraft.v1_8.minecraft;
 
+import java.util.Arrays;
+
 import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.InstancedFontRenderer;
@@ -29,7 +31,7 @@ import net.minecraft.util.ResourceLocation;
 
 public class EaglerFontRenderer extends FontRenderer {
 
-	private final int[] temporaryCodepointArray = new int[6553];
+	private int[] temporaryCodepointArray = new int[6553];
 
 	public static FontRenderer createSupportedFontRenderer(GameSettings gameSettingsIn, ResourceLocation location,
 			TextureManager textureManagerIn, boolean unicode) {
@@ -236,8 +238,23 @@ public class EaglerFontRenderer extends FontRenderer {
 	}
 
 	private boolean decodeASCIICodepointsAndValidate(String str) {
-		for(int i = 0, l = str.length(); i < l; ++i) {
-			int j = FontMappingHelper.lookupChar(str.charAt(i), true);
+		int length = str.length();
+		if(length > temporaryCodepointArray.length) {
+			int capacity = temporaryCodepointArray.length;
+			while(capacity < length && capacity <= Integer.MAX_VALUE / 2) {
+				capacity <<= 1;
+			}
+			if(capacity < length) {
+				capacity = length;
+			}
+			temporaryCodepointArray = Arrays.copyOf(temporaryCodepointArray, capacity);
+		}
+		for(int i = 0; i < length; ++i) {
+			char character = str.charAt(i);
+			if(Character.isSurrogate(character)) {
+				return false;
+			}
+			int j = FontMappingHelper.lookupChar(character, true);
 			if(j != -1) {
 				temporaryCodepointArray[i] = j;
 			}else {

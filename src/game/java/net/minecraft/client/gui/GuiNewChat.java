@@ -10,6 +10,7 @@ import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
 import net.lax1dude.eaglercraft.v1_8.pvp.config.PvpConfig;
+import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ChatComponentText;
@@ -50,6 +51,8 @@ public class GuiNewChat extends Gui {
 	private final List<ChatLine> field_146253_i = Lists.newArrayList();
 	private int scrollPos;
 	private boolean isScrolled;
+	private String cachedPlayerName = "";
+	private String cachedLowercasePlayerName = "";
 
 	public GuiNewChat(Minecraft mcIn) {
 		this.mc = mcIn;
@@ -63,6 +66,11 @@ public class GuiNewChat extends Gui {
 			int timestampWidth = showTimestamps
 					? this.mc.fontRendererObj.getStringWidth(pvpConfig.chatTimestamp24Hour ? "00:00 " : "12:00 AM ")
 					: 0;
+			String playerName = this.mc.thePlayer == null ? "" : this.mc.thePlayer.getName();
+			if(!playerName.equals(cachedPlayerName)) {
+				cachedPlayerName = playerName;
+				cachedLowercasePlayerName = playerName.toLowerCase(java.util.Locale.ROOT);
+			}
 			int i = this.getLineCount();
 			boolean flag = false;
 			int j = 0;
@@ -95,6 +103,9 @@ public class GuiNewChat extends Gui {
 							}
 
 							l1 = (int) ((float) l1 * f);
+							if(!flag) {
+								l1 = (int) (l1 * Math.min(1.0f, Math.max(0.0f, (j1 + 1) / 4.0f)));
+							}
 							++j;
 							if (l1 > 3) {
 								byte b0 = 0;
@@ -105,15 +116,19 @@ public class GuiNewChat extends Gui {
 										? pvpConfig.chatBackgroundColor : 0xFF000000;
 								int backgroundRgb = backgroundColor & 0x00FFFFFF;
 								int alpha = Math.max(0, Math.min(255, backgroundAlpha));
-								drawRect(b0, i2 - lineSpacing, b0 + l + 4 + timestampWidth, i2,
-										(alpha << 24) | backgroundRgb);
+								int background = (alpha << 24) | backgroundRgb;
+								if(pvpConfig != null && pvpConfig.enabled) {
+									HudRenderer.drawRoundedRect(b0, i2 - lineSpacing, l + 4 + timestampWidth,
+											lineSpacing, pvpConfig.appearance.cornerRadius, background);
+								}else {
+									drawRect(b0, i2 - lineSpacing, b0 + l + 4 + timestampWidth, i2, background);
+								}
 								String formattedText = chatline.getChatComponent().getFormattedText();
 								String plainText = chatline.getChatComponent().getUnformattedText();
 								boolean highlightMention = pvpConfig != null && pvpConfig.enabled
 										&& pvpConfig.chatHighlightMentions && this.mc.thePlayer != null
-										&& !this.mc.thePlayer.getName().isEmpty()
-										&& plainText.toLowerCase(java.util.Locale.ROOT)
-												.contains(this.mc.thePlayer.getName().toLowerCase(java.util.Locale.ROOT));
+										&& !cachedLowercasePlayerName.isEmpty()
+										&& containsIgnoreCase(plainText, cachedLowercasePlayerName);
 								String s = highlightMention ? plainText : formattedText;
 								GlStateManager.enableBlend();
 								if(showTimestamps) {
@@ -121,6 +136,7 @@ public class GuiNewChat extends Gui {
 											pvpConfig.chatTimestamp24Hour) + " ", (float) b0, (float) (i2 - 8),
 											0x009BA8B8 + (l1 << 24));
 								}
+
 								this.mc.fontRendererObj.drawStringWithShadow(s, (float) (b0 + timestampWidth),
 										(float) (i2 - 8), highlightMention ? 0x00FFD166 + (l1 << 24)
 												: 16777215 + (l1 << 24));
@@ -149,6 +165,16 @@ public class GuiNewChat extends Gui {
 				GlStateManager.popMatrix();
 			}
 		}
+	}
+
+	private boolean containsIgnoreCase(String text, String value) {
+		int lastIndex = text.length() - value.length();
+		for(int i = 0; i <= lastIndex; ++i) {
+			if(text.regionMatches(true, i, value, 0, value.length())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**+

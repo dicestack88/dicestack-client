@@ -30,6 +30,7 @@ public final class GuiScreenPvpHudProfiles extends GuiScreen {
 
 	@Override
 	public void initGui() {
+		fontRendererObj = PvpUiFontRenderer.get(mc);
 		buttonList.clear();
 		panelWidth = Math.min(380, Math.max(1, width - 12));
 		panelHeight = Math.min(210, Math.max(1, height - 12));
@@ -76,24 +77,17 @@ public final class GuiScreenPvpHudProfiles extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
 		HudAppearanceConfig appearance = pvpClient.getConfigStore().getConfig().appearance;
-		int start = HudRenderer.withAlpha(appearance.gradientStart,
-				Math.max(0.88f, appearance.backgroundOpacity));
-		int end = HudRenderer.withAlpha(appearance.gradientEnd,
-				Math.max(0.88f, appearance.backgroundOpacity));
-		if(appearance.preset == HudAppearanceConfig.Preset.MODERN_GLASS && appearance.gradientEnabled) {
-			drawGradientRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start, end);
-		}else {
-			drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, start);
-		}
-		drawRect(panelX, panelY, panelX + panelWidth, panelY + Math.max(2, appearance.borderThickness),
-				HudRenderer.withAlpha(appearance.accentColor, Math.max(0.72f, appearance.borderOpacity)));
+		HudRenderer.drawPanel(appearance, panelX, panelY, panelWidth, panelHeight);
 		drawCenteredString(fontRendererObj, "DICESTACK  /  HUD PROFILES", width / 2, panelY + 14, 0xFFFFFFFF);
 		drawString(fontRendererObj, "Profile name", panelX + 16, panelY + 43, 0xFF9BA8B8);
 		nameField.drawTextBox();
 		List<String> profiles = profiles();
 		String selected = profiles.isEmpty() ? "No saved profiles" : profiles.get(selectedIndex);
-		drawCenteredString(fontRendererObj, "Selected: " + selected, width / 2, panelY + 86, 0xFFE9EFF7);
-		drawCenteredString(fontRendererObj, status, width / 2, panelY + panelHeight - 22, 0xFF53D6A3);
+		int textWidth = Math.max(0, panelWidth - 24);
+		drawCenteredString(fontRendererObj, fontRendererObj.trimStringToWidth("Selected: " + selected, textWidth),
+				width / 2, panelY + 86, 0xFFE9EFF7);
+		drawCenteredString(fontRendererObj, fontRendererObj.trimStringToWidth(status, textWidth),
+				width / 2, panelY + panelHeight - 22, 0xFF53D6A3);
 		super.drawScreen(mouseX, mouseY, partialTicks);
 	}
 

@@ -18,6 +18,7 @@ import net.minecraft.item.ItemFood;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.hud.HudAppearanceConfig;
 import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
 
 public final class TextHud implements HudElement {
 
@@ -439,14 +440,15 @@ public final class TextHud implements HudElement {
 		}
 		String name = cachedTargetName == null ? cachedTarget.getName() : cachedTargetName;
 		int contentWidth = width - style.padding * 2;
-		int healthWidth = minecraft.fontRendererObj.getStringWidth(cachedTargetHealthText);
+		net.minecraft.client.gui.FontRenderer font = PvpUiFontRenderer.get(minecraft);
+		int healthWidth = font.getStringWidth(cachedTargetHealthText);
 		int nameWidth = cachedTargetHealthText.isEmpty() ? contentWidth : contentWidth - healthWidth - 4;
 		nameWidth = Math.max(1, nameWidth);
 		if(cachedTargetDisplayName == null || cachedTargetDisplayWidth != nameWidth
 				|| !name.equals(cachedTargetDisplaySource)) {
 			cachedTargetDisplaySource = name;
 			cachedTargetDisplayWidth = nameWidth;
-			cachedTargetDisplayName = minecraft.fontRendererObj.trimStringToWidth(name, nameWidth);
+			cachedTargetDisplayName = font.trimStringToWidth(name, nameWidth);
 		}
 		HudRenderer.drawText(context, getId(), minecraft, cachedTargetDisplayName, left, top + 9, nameWidth);
 		if(!cachedTargetHealthText.isEmpty()) {
@@ -495,7 +497,7 @@ public final class TextHud implements HudElement {
 		HudRenderer.drawText(context, getId(), minecraft, cachedFoodExhaustionText,
 				left + barWidth + 4, top + 28, 32);
 		if(cachedFoodEstimate > 0) {
-			int textWidth = minecraft.fontRendererObj.getStringWidth(cachedFoodEstimateText);
+			int textWidth = PvpUiFontRenderer.get(minecraft).getStringWidth(cachedFoodEstimateText);
 			HudRenderer.drawTextColor(context, getId(), minecraft, cachedFoodEstimateText,
 					left + width - style.padding * 2 - textWidth, top, textWidth, 0xFF53D6A3);
 		}
@@ -507,8 +509,9 @@ public final class TextHud implements HudElement {
 			HudRenderer.drawItem(minecraft, cachedInventoryStacks[i], itemX, top + 4);
 			String count = cachedInventoryCountLabels[i];
 			if(count != null) {
-				int countX = itemX + 16 - minecraft.fontRendererObj.getStringWidth(count);
-				minecraft.fontRendererObj.drawStringWithShadow(count, countX, top + 14, 0xFFFFFFFF);
+				net.minecraft.client.gui.FontRenderer font = PvpUiFontRenderer.get(minecraft);
+				int countX = itemX + 16 - font.getStringWidth(count);
+				font.drawStringWithShadow(count, countX, top + 14, 0xFFFFFFFF);
 			}
 		}
 		if(cachedInventoryCount == 0) {
@@ -1091,7 +1094,7 @@ public final class TextHud implements HudElement {
 	private void setText(String text) {
 		if(!text.equals(cachedText)) {
 			cachedText = text;
-			cachedWidth = minecraft.fontRendererObj.getStringWidth(text) + 4;
+			cachedWidth = PvpUiFontRenderer.get(minecraft).getStringWidth(text) + 4;
 		}
 	}
 
