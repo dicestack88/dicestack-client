@@ -32,6 +32,7 @@ public final class GuiScreenPvpClientMenu extends GuiScreen {
 	private String titleText;
 	private String searchHint;
 	private String noMatchesText;
+	private int searchFieldWidth;
 	private final int[] categoryButtonX = new int[CATEGORIES.length];
 	private final int[] categoryButtonY = new int[CATEGORIES.length];
 	private final int[] categoryButtonHeight = new int[CATEGORIES.length];
@@ -55,14 +56,14 @@ public final class GuiScreenPvpClientMenu extends GuiScreen {
 		int headerGap = Math.min(4, Math.max(0, headerControlsWidth / 5));
 		int headerButtonWidth = Math.max(1, (headerControlsWidth - headerGap) / 2);
 		int headerControlsX = panelX + panelWidth - 12 - headerControlsWidth;
-		int searchWidth = Math.max(1, innerWidth - headerControlsWidth - 6);
-		searchField = new GuiTextField(100, fontRendererObj, panelX + 12, panelY + 36, searchWidth, 18);
+		searchFieldWidth = Math.max(1, innerWidth - headerControlsWidth - 6);
+		searchField = new GuiTextField(100, fontRendererObj, panelX + 12, panelY + 36, searchFieldWidth, 18);
 		searchField.setMaxStringLength(48);
 		searchField.setText(searchText);
 		titleText = fontRendererObj.trimStringToWidth("DICESTACK  /  CLIENT CONTROL CENTER",
 				Math.max(0, panelWidth - 24));
 		searchHint = fontRendererObj.trimStringToWidth("Search categories or every client setting...",
-				Math.max(0, searchField.width - 8));
+				Math.max(0, searchFieldWidth - 8));
 		noMatchesText = fontRendererObj.trimStringToWidth("No matching categories. Use Search for settings.",
 				Math.max(0, panelWidth - 24));
 		int columns = innerWidth >= 330 ? 3 : 2;

@@ -41,6 +41,7 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 	private String titleText;
 	private String searchHint;
 	private String pageLabel;
+	private int searchFieldWidth;
 
 	public GuiScreenPvpQolSettings(PvpClient pvpClient, GuiScreen parent) {
 		this(pvpClient, parent, 0, "");
@@ -61,14 +62,15 @@ public final class GuiScreenPvpQolSettings extends GuiScreen {
 		panelX = (width - panelWidth) / 2;
 		panelY = Math.max(0, (height - panelHeight) / 2);
 		buttonList.clear();
-		searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31, Math.max(1, panelWidth - 16), 18);
+		searchFieldWidth = Math.max(1, panelWidth - 16);
+		searchField = new GuiTextField(100, fontRendererObj, panelX + 8, panelY + 31, searchFieldWidth, 18);
 		searchField.setMaxStringLength(32);
 		searchField.setText(searchText);
 		settingsPage = Math.min(settingsPage, getSettingsPageCount() - 1);
 		titleText = fontRendererObj.trimStringToWidth("DICESTACK  /  " + pageTitle(),
 				Math.max(0, panelWidth - 16));
 		searchHint = fontRendererObj.trimStringToWidth("Search all settings...",
-				Math.max(0, searchField.width - 8));
+				Math.max(0, searchFieldWidth - 8));
 		List<Integer> displayedIds = getDisplayedButtonIds();
 		int rows = (displayedIds.size() + 1) / 2;
 		int footerHeight = Math.min(20, Math.max(1, panelHeight - 1));

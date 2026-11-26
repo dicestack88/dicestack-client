@@ -50,6 +50,7 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 	private int visibleRows;
 	private int page;
 	private String previousSearch = "";
+	private int searchFieldWidth;
 	private String titleText;
 	private String descriptionText;
 	private String searchHint;
@@ -86,14 +87,15 @@ public final class GuiScreenPvpHudModuleManager extends GuiScreen {
 		listWidth = Math.max(1, (panelWidth - 36) / 2);
 		visibleRows = Math.max(1, Math.min(PAGE_SIZE, (panelHeight - 166) / 28));
 
-		searchField = new GuiTextField(100, fontRendererObj, listX, panelY + 69, Math.max(1, listWidth - 80), 18);
+		searchFieldWidth = Math.max(1, listWidth - 80);
+		searchField = new GuiTextField(100, fontRendererObj, listX, panelY + 69, searchFieldWidth, 18);
 		searchField.setMaxStringLength(32);
 		searchField.setText(previousSearch);
 		int headerWidth = Math.max(0, panelWidth - 24);
 		titleText = fontRendererObj.trimStringToWidth("DICESTACK  /  HUD MODULES", headerWidth);
 		descriptionText = fontRendererObj.trimStringToWidth("Search modules and configure your active HUD",
 				headerWidth);
-		searchHint = fontRendererObj.trimStringToWidth("Search...", Math.max(0, searchField.width - 8));
+		searchHint = fontRendererObj.trimStringToWidth("Search...", Math.max(0, searchFieldWidth - 8));
 		int tabX = panelX + 12;
 		int tabWidth = Math.max(1, (panelWidth - 24) / HudModuleInfo.Category.values().length);
 		HudModuleInfo.Category[] categories = HudModuleInfo.Category.values();
