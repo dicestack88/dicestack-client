@@ -65,6 +65,7 @@ import net.lax1dude.eaglercraft.v1_8.profile.EaglerProfile;
 import net.lax1dude.eaglercraft.v1_8.profile.GuiScreenEditProfile;
 import net.lax1dude.eaglercraft.v1_8.profile.SkinPreviewRenderer;
 import net.lax1dude.eaglercraft.v1_8.pvp.PvpClient;
+import net.lax1dude.eaglercraft.v1_8.pvp.PvpUiFontRenderer;
 import net.lax1dude.eaglercraft.v1_8.socket.AddressResolver;
 import net.lax1dude.eaglercraft.v1_8.socket.EaglercraftNetworkManager;
 import net.lax1dude.eaglercraft.v1_8.socket.RateLimitTracker;
@@ -438,6 +439,7 @@ public class Minecraft implements IThreadListener {
 		this.mcMusicTicker = new MusicTicker(this);
 		this.fontRendererObj = EaglerFontRenderer.createSupportedFontRenderer(this.gameSettings,
 				new ResourceLocation("textures/font/ascii.png"), this.renderEngine, false);
+		this.fontRendererObj = PvpUiFontRenderer.get(this);
 		if (this.gameSettings.language != null) {
 			this.fontRendererObj.setUnicodeFlag(this.isUnicode());
 			this.fontRendererObj.setBidiFlag(this.mcLanguageManager.isCurrentLanguageBidirectional());

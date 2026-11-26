@@ -43,6 +43,10 @@ public final class HudAppearanceConfig {
 	public float textScale = 1.0f;
 	public TextAlignment textAlignment = TextAlignment.LEFT;
 	public boolean rainbowEnabled = false;
+	public boolean rgbEnabled = false;
+	public float rgbSpeed = 1.0f;
+	public float rgbSaturation = 0.72f;
+	public float rgbBrightness = 1.0f;
 	public boolean animationsEnabled = true;
 	public int performanceGoodColor = 0xFF53D6A3;
 	public int performanceMediumColor = 0xFFFFD166;
@@ -69,6 +73,11 @@ public final class HudAppearanceConfig {
 			spacing = 2;
 			cornerRadius = 0;
 			animationsEnabled = false;
+			rainbowEnabled = false;
+			rgbEnabled = false;
+			rgbSpeed = 1.0f;
+			rgbSaturation = 0.72f;
+			rgbBrightness = 1.0f;
 		}else {
 			backgroundEnabled = true;
 			gradientEnabled = true;
@@ -89,6 +98,11 @@ public final class HudAppearanceConfig {
 			spacing = 4;
 			cornerRadius = 3;
 			animationsEnabled = true;
+			rainbowEnabled = false;
+			rgbEnabled = false;
+			rgbSpeed = 1.0f;
+			rgbSaturation = 0.72f;
+			rgbBrightness = 1.0f;
 		}
 	}
 
@@ -138,6 +152,10 @@ public final class HudAppearanceConfig {
 			result.textAlignment = defaults.textAlignment;
 		}
 		result.rainbowEnabled = json.optBoolean("rainbowEnabled", defaults.rainbowEnabled);
+		result.rgbEnabled = json.optBoolean("rgbEnabled", defaults.rgbEnabled);
+		result.rgbSpeed = clamp(json.optDouble("rgbSpeed", defaults.rgbSpeed), 0.1f, 5.0f);
+		result.rgbSaturation = clamp(json.optDouble("rgbSaturation", defaults.rgbSaturation), 0.0f, 1.0f);
+		result.rgbBrightness = clamp(json.optDouble("rgbBrightness", defaults.rgbBrightness), 0.1f, 1.0f);
 		result.animationsEnabled = json.optBoolean("animationsEnabled", defaults.animationsEnabled);
 		result.performanceGoodColor = json.optInt("performanceGoodColor", defaults.performanceGoodColor);
 		result.performanceMediumColor = json.optInt("performanceMediumColor", defaults.performanceMediumColor);
@@ -170,6 +188,10 @@ public final class HudAppearanceConfig {
 		json.put("textScale", textScale);
 		json.put("textAlignment", textAlignment.name());
 		json.put("rainbowEnabled", rainbowEnabled);
+		json.put("rgbEnabled", rgbEnabled);
+		json.put("rgbSpeed", rgbSpeed);
+		json.put("rgbSaturation", rgbSaturation);
+		json.put("rgbBrightness", rgbBrightness);
 		json.put("animationsEnabled", animationsEnabled);
 		json.put("performanceGoodColor", performanceGoodColor);
 		json.put("performanceMediumColor", performanceMediumColor);
@@ -210,6 +232,10 @@ public final class HudAppearanceConfig {
 		textScale = source.textScale;
 		textAlignment = source.textAlignment;
 		rainbowEnabled = source.rainbowEnabled;
+		rgbEnabled = source.rgbEnabled;
+		rgbSpeed = source.rgbSpeed;
+		rgbSaturation = source.rgbSaturation;
+		rgbBrightness = source.rgbBrightness;
 		animationsEnabled = source.animationsEnabled;
 		performanceGoodColor = source.performanceGoodColor;
 		performanceMediumColor = source.performanceMediumColor;
