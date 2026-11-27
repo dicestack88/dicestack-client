@@ -732,10 +732,7 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 			float aspect = (ingame && PauseMenuCustomizeState.icon_background_pause != null)
 					? 1.0f / PauseMenuCustomizeState.icon_background_pause_aspect
 					: 1.0f / PauseMenuCustomizeState.icon_background_all_aspect;
-			if (isDicestackMenuBackgroundAllowed()
-					&& EagRuntime.getResourceExists("/assets/dicestack/textures/gui/main-menu-background.png")) {
-				this.drawBackground(i);
-			} else if (loc != null) {
+			if (loc != null) {
 				GlStateManager.disableLighting();
 				GlStateManager.disableFog();
 				GlStateManager.enableBlend();
@@ -791,7 +788,7 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 	public void drawBackground(int tint) {
 		GlStateManager.disableLighting();
 		GlStateManager.disableFog();
-		if(isDicestackMenuBackgroundAllowed()
+		if(mc.theWorld == null && isDicestackMenuBackgroundAllowed()
 				&& EagRuntime.getResourceExists("/assets/dicestack/textures/gui/main-menu-background.png")) {
 			GlStateManager.enableBlend();
 			GlStateManager.disableAlpha();
@@ -816,6 +813,7 @@ public abstract class GuiScreen extends Gui implements GuiYesNoCallback {
 			worldrenderer.pos((double) this.width, 0.0D, 0.0D).tex(u1, v0).endVertex();
 			worldrenderer.pos(0.0D, 0.0D, 0.0D).tex(u0, v0).endVertex();
 			tessellator.draw();
+			this.drawGradientRect(0, 0, this.width, this.height, 0xA010161E, 0xC0080C12);
 			GlStateManager.enableAlpha();
 			return;
 		}
