@@ -11,6 +11,9 @@ public final class PvpColorPicker {
 	}
 
 	private final GuiTextField hexField;
+	private final GuiTextField redField;
+	private final GuiTextField greenField;
+	private final GuiTextField blueField;
 	private final ColorListener listener;
 	private int color;
 	private int defaultColor;
@@ -29,6 +32,12 @@ public final class PvpColorPicker {
 		this.listener = listener;
 		this.hexField = new GuiTextField(900, PvpUiFontRenderer.get(minecraft), 0, 0, 72, 16);
 		this.hexField.setMaxStringLength(8);
+		this.redField = new GuiTextField(901, PvpUiFontRenderer.get(minecraft), 0, 0, 28, 16);
+		this.greenField = new GuiTextField(902, PvpUiFontRenderer.get(minecraft), 0, 0, 28, 16);
+		this.blueField = new GuiTextField(903, PvpUiFontRenderer.get(minecraft), 0, 0, 28, 16);
+		this.redField.setMaxStringLength(3);
+		this.greenField.setMaxStringLength(3);
+		this.blueField.setMaxStringLength(3);
 		setColor(initialColor, false);
 	}
 
@@ -39,6 +48,12 @@ public final class PvpColorPicker {
 		this.height = Math.max(76, height);
 		this.hexField.xPosition = x + 6;
 		this.hexField.yPosition = y + height - 20;
+		this.redField.xPosition = x + 6;
+		this.redField.yPosition = y + height - 40;
+		this.greenField.xPosition = x + 38;
+		this.greenField.yPosition = y + height - 40;
+		this.blueField.xPosition = x + 70;
+		this.blueField.yPosition = y + height - 40;
 	}
 
 	public void setColor(int color, boolean notify) {
@@ -55,6 +70,9 @@ public final class PvpColorPicker {
 			alpha = 1.0F;
 		}
 		hexField.setText(toHex(color));
+		redField.setText(Integer.toString((color >> 16) & 255));
+		greenField.setText(Integer.toString((color >> 8) & 255));
+		blueField.setText(Integer.toString(color & 255));
 		if(notify && listener != null) {
 			listener.onColorChanged(color);
 		}
@@ -66,6 +84,9 @@ public final class PvpColorPicker {
 
 	public void updateScreen() {
 		hexField.updateCursorCounter();
+		redField.updateCursorCounter();
+		greenField.updateCursorCounter();
+		blueField.updateCursorCounter();
 	}
 
 	public void draw(Minecraft minecraft, int mouseX, int mouseY) {
@@ -87,6 +108,12 @@ public final class PvpColorPicker {
 
 		fontRendererLabel(minecraft, "HEX", x + 6, y + height - 34);
 		hexField.drawTextBox();
+		fontRendererLabel(minecraft, "R", redField.xPosition, redField.yPosition - 10);
+		fontRendererLabel(minecraft, "G", greenField.xPosition, greenField.yPosition - 10);
+		fontRendererLabel(minecraft, "B", blueField.xPosition, blueField.yPosition - 10);
+		redField.drawTextBox();
+		greenField.drawTextBox();
+		blueField.drawTextBox();
 
 		int resetX = x + width - 42;
 		HudRenderer.drawRoundedRect(resetX, y + height - 20, 36, 16, 4, 0xCC26384B);
@@ -108,6 +135,9 @@ public final class PvpColorPicker {
 
 	public boolean mouseClicked(Minecraft minecraft, int mouseX, int mouseY, int button) {
 		hexField.mouseClicked(mouseX, mouseY, button);
+		redField.mouseClicked(mouseX, mouseY, button);
+		greenField.mouseClicked(mouseX, mouseY, button);
+		blueField.mouseClicked(mouseX, mouseY, button);
 		if(button != 0) {
 			return false;
 		}
@@ -165,27 +195,58 @@ public final class PvpColorPicker {
 	}
 
 	public boolean keyTyped(char character, int keyCode) {
-		if(!hexField.textboxKeyTyped(character, keyCode)) {
-			return false;
-		}
-		String text = hexField.getText();
-		if(text.startsWith("#")) {
-			text = text.substring(1);
-		}
-		if(text.length() == 6 || text.length() == 8) {
-			try {
-				long parsed = Long.parseLong(text, 16);
-				int next;
-				if(text.length() == 6) {
-					next = 0xFF000000 | (int) parsed;
-				}else {
-					next = (int) parsed;
-				}
-				setColor(next, true);
-			}catch(NumberFormatException ignored) {
+		if(hexField.isFocused()) {
+			if(!hexField.textboxKeyTyped(character, keyCode)) {
+				return false;
 			}
+			String text = hexField.getText();
+			if(text.startsWith("#")) {
+				text = text.substring(1);
+			}
+			if(text.length() == 6 || text.length() == 8) {
+				try {
+					long parsed = Long.parseLong(text, 16);
+					int next;
+					if(text.length() == 6) {
+						next = 0xFF000000 | (int) parsed;
+					}else {
+						next = (int) parsed;
+					}
+					setColor(next, true);
+				}catch(NumberFormatException ignored) {
+				}
+			}
+			return true;
 		}
-		return true;
+		boolean rgbChanged = false;
+		if(redField.isFocused()) {
+			rgbChanged = redField.textboxKeyTyped(character, keyCode);
+		}else if(greenField.isFocused()) {
+			rgbChanged = greenField.textboxKeyTyped(character, keyCode);
+		}else if(blueField.isFocused()) {
+			rgbChanged = blueField.textboxKeyTyped(character, keyCode);
+		}
+		if(rgbChanged) {
+			updateRgbFromFields();
+		}
+		return rgbChanged;
+	}
+
+	private void updateRgbFromFields() {
+		int red = parseChannel(redField.getText());
+		int green = parseChannel(greenField.getText());
+		int blue = parseChannel(blueField.getText());
+		int rgb = (red << 16) | (green << 8) | blue;
+		int next = ((int) (alpha * 255.0F) << 24) | rgb;
+		setColor(next, true);
+	}
+
+	private int parseChannel(String text) {
+		try {
+			return Math.max(0, Math.min(255, Integer.parseInt(text)));
+		}catch(NumberFormatException ignored) {
+			return 0;
+		}
 	}
 
 	private static String toHex(int color) {

@@ -25,6 +25,7 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 	private static final int ID_NEXT = 301;
 	private static final int ID_PROFILES = 302;
 	private static final int ID_DONE = 303;
+	private static final int ID_SETTINGS_BASE = 400;
 
 	private static final class ModEntry {
 		final String name;
@@ -122,6 +123,8 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 				buttonList.add(new PvpToggleButton(buttonId,
 						contentX + contentWidth - 58, rowY + 7, 50, 16, isEnabled(entry)));
 			}
+			buttonList.add(new PvpGuiButton(ID_SETTINGS_BASE + allEntries.indexOf(entry),
+					contentX + contentWidth - 112, rowY + 7, 50, 16, "Settings"));
 		}
 
 		int footerY = panelY + panelHeight - 31;
@@ -187,6 +190,12 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 			String description = fontRendererObj.trimStringToWidth(entry.description,
 					Math.max(1, contentWidth - 72));
 			fontRendererObj.drawStringWithShadow(description, contentX + 8, rowY + 16, 0xFF9BA8B8);
+			if(!isNavigationEntry(entry)) {
+				String state = isEnabled(entry) ? "ON" : "OFF";
+				int stateColor = isEnabled(entry) ? 0xFF53D6A3 : 0xFF9BA8B8;
+				fontRendererObj.drawStringWithShadow(state,
+						contentX + contentWidth - 152, rowY + 11, stateColor);
+			}
 		}
 		if(filteredEntries.isEmpty()) {
 			String message = "No mods match this search.";
@@ -217,6 +226,13 @@ public final class GuiScreenPvpClientMenu extends GuiScreen implements IDicestac
 			page = 0;
 			statusText = "";
 			initGui();
+			return;
+		}
+		if(button.id >= ID_SETTINGS_BASE) {
+			int index = button.id - ID_SETTINGS_BASE;
+			if(index >= 0 && index < allEntries.size()) {
+				openEntryConfig(allEntries.get(index));
+			}
 			return;
 		}
 		if(button.id >= ID_MOD_BASE && button.id < ID_PREVIOUS) {

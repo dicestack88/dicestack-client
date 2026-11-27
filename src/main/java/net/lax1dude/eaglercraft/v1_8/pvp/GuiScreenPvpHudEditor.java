@@ -57,6 +57,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestack
 	private int activePopupSlider = -1;
 	private PvpColorPicker colorPicker;
 	private int colorPickerProperty = -1;
+	private int inspectorSettingsX;
+	private int inspectorSettingsY;
+	private int inspectorSettingsWidth;
+	private int inspectorSettingsHeight;
 
 	public GuiScreenPvpHudEditor(PvpClient pvpClient) {
 		this(pvpClient, null);
@@ -135,32 +139,18 @@ public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestack
 			popupPanelHeight = 0;
 			return;
 		}
-		HudManager manager = pvpClient.getHudManager();
 		int safeWidth = Math.max(1, width - 8);
 		int inspectorWidth = safeWidth >= 520 ? 224 : safeWidth >= 280 ? 180 : safeWidth;
 		popupPanelWidth = Math.min(inspectorWidth, safeWidth);
 		popupPanelX = safeWidth >= 280 ? width - popupPanelWidth - 4 : 4;
 		int desiredPopupY = safeWidth >= 280 ? toolbarPanelY + toolbarPanelHeight + 6 : 4;
 		popupPanelY = Math.max(4, Math.min(Math.max(4, height - 40), desiredPopupY));
-		popupPanelHeight = Math.max(1, Math.min(height - popupPanelY - 4,
-				safeWidth >= 280 ? height - popupPanelY - 4 : Math.max(40, height - 8)));
+		popupPanelHeight = Math.min(150, Math.max(40, height - popupPanelY - 4));
 		popupContentTop = popupPanelY + 52;
-		int columns = safeWidth >= 280 ? popupPanelWidth >= 220 ? 3 : 2 : 2;
-		int rows = (POPUP_BUTTONS + columns - 1) / columns;
-		int gap = 2;
-		int innerWidth = Math.max(1, popupPanelWidth - 10);
-		int cellWidth = Math.max(1, (innerWidth - gap * (columns - 1)) / columns);
-		int effectiveRowHeight = Math.max(10, Math.min(16,
-				(popupPanelHeight - 28 - gap * (rows - 1)) / rows));
-		for(int i = 0; i < POPUP_BUTTONS; ++i) {
-			int column = i % columns;
-			int row = i / columns;
-			popupXByButton[i] = popupPanelX + 5 + column * (cellWidth + gap);
-			popupYByButton[i] = popupContentTop + row * (effectiveRowHeight + gap);
-			popupWidthByButton[i] = column == columns - 1
-					? popupPanelX + popupPanelWidth - 5 - popupXByButton[i] : cellWidth;
-			popupHeightByButton[i] = effectiveRowHeight;
-		}
+		inspectorSettingsX = popupPanelX + 5;
+		inspectorSettingsY = popupPanelY + popupPanelHeight - 25;
+		inspectorSettingsWidth = popupPanelWidth - 10;
+		inspectorSettingsHeight = 20;
 	}
 
 	private void drawToolbar(int mouseX, int mouseY) {
@@ -214,34 +204,17 @@ public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestack
 		fontRendererObj.drawStringWithShadow("INSPECTOR",
 				popupPanelX + 5, popupPanelY + 5, 0xFF53D6A3);
 		drawLivePreview();
-		if(colorPicker != null) {
-			colorPicker.setBounds(popupPanelX + 5,
-					Math.max(popupPanelY + 52, popupPanelY + popupPanelHeight - 82),
-					popupPanelWidth - 10, 76);
-			colorPicker.draw(mc, mouseX, mouseY);
-		}
-		for(int i = 0; i < POPUP_BUTTONS; ++i) {
-			int id = POPUP_IDS[i];
-			if(id == 18 || id == 23 || id == 32 || id == 34 || id == 36) {
-				continue;
-			}
-			if(id == 17 || id == 22 || id == 31 || id == 33 || id == 35) {
-				int companion = id + 1;
-				int companionIndex = popupIndex(companion);
-				if(companionIndex >= 0) {
-					int sliderX = popupXByButton[i];
-					int sliderY = popupYByButton[i];
-					int sliderWidth = popupXByButton[companionIndex] + popupWidthByButton[companionIndex] - sliderX;
-					drawPopupSlider(id, sliderX, sliderY, sliderWidth,
-							popupHeightByButton[i], mouseX, mouseY);
-					continue;
-				}
-			}
-			drawControl(popupXByButton[i], popupYByButton[i], popupWidthByButton[i], popupHeightByButton[i],
-					popupLabels[i], isPopupControlActive(id),
-					contains(popupXByButton[i], popupYByButton[i], popupWidthByButton[i],
-							popupHeightByButton[i], mouseX, mouseY));
-		}
+		HudElementConfig element = pvpClient.getHudManager().getElementConfig(selectedElement);
+		String name = getSelectedElementName();
+		name = fontRendererObj.trimStringToWidth(name, Math.max(1, popupPanelWidth - 10));
+		fontRendererObj.drawStringWithShadow(name, popupPanelX + 5, popupPanelY + 58, 0xFFF1F7F5);
+		String visibility = element.enabled ? "Visible" : "Hidden";
+		fontRendererObj.drawStringWithShadow(visibility + "  /  " + Math.round(element.scale * 100.0f) + "%",
+				popupPanelX + 5, popupPanelY + 70, element.enabled ? 0xFF53D6A3 : 0xFFFF7777);
+		boolean hovered = contains(inspectorSettingsX, inspectorSettingsY, inspectorSettingsWidth,
+				inspectorSettingsHeight, mouseX, mouseY);
+		drawControl(inspectorSettingsX, inspectorSettingsY, inspectorSettingsWidth, inspectorSettingsHeight,
+				"Open Element Settings", false, hovered);
 	}
 
 	private void drawPopupSlider(int id, int x, int y, int controlWidth, int controlHeight, int mouseX, int mouseY) {
@@ -375,6 +348,16 @@ public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestack
 				previewX + (previewWidth - labelWidth) / 2,
 				previewY + (previewHeight - 8) / 2,
 				HudRenderer.withAlpha(style.textColor, style.textOpacity));
+	}
+
+	private String getSelectedElementName() {
+		HudManager manager = pvpClient.getHudManager();
+		for(int i = 0; i < manager.getElementCount(); ++i) {
+			if(manager.getElement(i) == selectedElement) {
+				return manager.getModuleInfo(i).name;
+			}
+		}
+		return "HUD Element";
 	}
 
 	private void drawControl(int x, int y, int controlWidth, int controlHeight, String label,
@@ -524,11 +507,7 @@ public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestack
 			HudElement element = hudManager.getElementAt(mouseX, mouseY, resolution);
 			if(element != null) {
 				selectedElement = element;
-				colorPicker = null;
-				colorPickerProperty = -1;
-				dragging = false;
-				updateControlLabels();
-				layoutControls();
+				mc.displayGuiScreen(new GuiScreenPvpHudElementSettings(pvpClient, this, element));
 			}
 			return;
 		}
@@ -542,12 +521,10 @@ public final class GuiScreenPvpHudEditor extends GuiScreen implements IDicestack
 			handleToolbarAction(TOOLBAR_IDS[toolbarControl]);
 			return;
 		}
-		if(button == 0 && selectedElement != null && startPopupSlider(mouseX, mouseY)) {
-			return;
-		}
-		int popupControl = selectedElement == null ? -1 : findPopupControl(mouseX, mouseY);
-		if(popupControl >= 0) {
-			handlePopupAction(POPUP_IDS[popupControl]);
+		if(button == 0 && selectedElement != null
+				&& contains(inspectorSettingsX, inspectorSettingsY, inspectorSettingsWidth,
+						inspectorSettingsHeight, mouseX, mouseY)) {
+			mc.displayGuiScreen(new GuiScreenPvpHudElementSettings(pvpClient, this, selectedElement));
 			return;
 		}
 		HudManager hudManager = pvpClient.getHudManager();
